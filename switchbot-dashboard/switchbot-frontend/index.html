@@ -452,7 +452,7 @@
       var deviceType = escapeHtml(meter.device_type);
 
       var html = '';
-      html += '<div class="panel panel-default' + (isStale ? ' stale-meters-panel' : '') + '">';
+      html += '<div class="panel panel-default">';
       html += '  <div class="panel-heading">';
       html += '    <div class="meter-panel-header">';
       html += '      <div class="meter-panel-title">';
@@ -520,6 +520,10 @@
       for (var i = 0; i < metersData.length; i++) {
         (function(meter) {
           if (isStaleMeter(meter)) {
+            if (charts[meter.device_id]) {
+              charts[meter.device_id].destroy();
+              delete charts[meter.device_id];
+            }
             return;
           }
           fetchHistory(meter.device_id, currentTimeScale, function(err, data) {
