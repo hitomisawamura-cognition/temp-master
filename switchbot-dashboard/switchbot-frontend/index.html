@@ -23,6 +23,11 @@
       justify-content: space-between;
       align-items: center;
     }
+    .meter-panel-title {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+    }
     .meter-stats .label {
       font-size: 14px;
       margin-right: 6px;
@@ -60,6 +65,39 @@
       background-color: #eee;
       padding: 2px 8px;
       border-radius: 10px;
+    }
+    .meter-section {
+      margin-bottom: 20px;
+    }
+    .meter-section-header {
+      margin-bottom: 10px;
+    }
+    .meter-section-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #8a6d3b;
+    }
+    .meter-section-subtitle {
+      margin: 4px 0 0;
+      color: #8a6d3b;
+      font-size: 12px;
+    }
+    .stale-meters-panel {
+      border-color: #f0ad4e;
+      background-color: #fcf8e3;
+    }
+    .stale-meters-panel > .panel-heading {
+      background-color: #fcf8e3;
+      border-bottom-color: #f0ad4e;
+    }
+    .stale-meter-badge {
+      display: inline-block;
+      margin-left: 8px;
+    }
+    .stale-meter-empty {
+      color: #8a6d3b;
+      margin: 0;
     }
   </style>
 </head>
@@ -154,6 +192,7 @@
 
     var REFRESH_INTERVAL = 30000;
     var currentTimeScale = 'day';
+    var STALE_METER_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000;
     var metersData = [];
     var statusData = null;
     var charts = {}; // device_id -> Chart instance map
@@ -355,15 +394,59 @@
     }
 
     function renderDefaultView() {
-      var html = '<div class="row">';
+      var activeMeters = [];
+      var staleMeters = [];
+
       for (var i = 0; i < metersData.length; i++) {
-        html += '<div class="col-md-4 col-sm-6">' + createMeterPanel(metersData[i]) + '</div>';
+        var meter = metersData[i];
+        if (isStaleMeter(meter)) {
+          staleMeters.push(meter);
+        } else {
+          activeMeters.push(meter);
+        }
       }
-      html += '</div>';
+
+      var html = renderMeterGrid(activeMeters);
+      if (staleMeters.length > 0) {
+        html += renderStaleMetersSection(staleMeters);
+      }
       $('#meters-container').html(html);
     }
 
-    function createMeterPanel(meter) {
+    function renderMeterGrid(meters) {
+      if (!meters.length) {
+        return '';
+      }
+
+      var html = '<div class="row">';
+      for (var i = 0; i < meters.length; i++) {
+        html += '<div class="col-md-4 col-sm-6">' + createMeterPanel(meters[i], false) + '</div>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function renderStaleMetersSection(meters) {
+      var html = '';
+      html += '<div class="meter-section">';
+      html += '  <div class="meter-section-header">';
+      html += '    <h3 class="meter-section-title"><span class="glyphicon glyphicon-warning-sign" aria-hidden="true"></span> 未更新のメーター</h3>';
+      html += '    <p class="meter-section-subtitle">1週間以上更新されていないデバイス</p>';
+      html += '  </div>';
+      html += '  <div class="panel panel-warning stale-meters-panel">';
+      html += '    <div class="panel-body">';
+      html += '      <div class="row">';
+      for (var i = 0; i < meters.length; i++) {
+        html += '<div class="col-md-4 col-sm-6">' + createMeterPanel(meters[i], true) + '</div>';
+      }
+      html += '      </div>';
+      html += '    </div>';
+      html += '  </div>';
+      html += '</div>';
+      return html;
+    }
+
+    function createMeterPanel(meter, isStale) {
       var deviceId = escapeHtml(meter.device_id);
       var deviceName = escapeHtml(getDisplayName(meter.device_name));
       var deviceType = escapeHtml(meter.device_type);
@@ -372,7 +455,12 @@
       html += '<div class="panel panel-default">';
       html += '  <div class="panel-heading">';
       html += '    <div class="meter-panel-header">';
-      html += '      <strong>' + deviceName + '</strong>';
+      html += '      <div class="meter-panel-title">';
+      html += '        <strong>' + deviceName + '</strong>';
+      if (isStale) {
+        html += '        <span class="label label-warning stale-meter-badge">7日以上未更新</span>';
+      }
+      html += '      </div>';
       html += '      <span class="device-type-tag">' + deviceType + '</span>';
       html += '    </div>';
       html += '  </div>';
@@ -390,19 +478,38 @@
       }
 
       html += '    </div>';
-      html += '    <div class="meter-chart-wrap">';
-      html += '      <canvas id="chart-' + deviceId + '"></canvas>';
-      html += '    </div>';
+      if (isStale) {
+        html += '    <p class="stale-meter-empty">履歴データの取得対象外</p>';
+      } else {
+        html += '    <div class="meter-chart-wrap">';
+        html += '      <canvas id="chart-' + deviceId + '"></canvas>';
+        html += '    </div>';
+      }
 
       if (meter.last_updated) {
         var d = new Date(meter.last_updated);
         var lastUpdatedStr = d.toLocaleString();
         html += '    <p class="meter-last-updated">Last updated: ' + escapeHtml(lastUpdatedStr) + '</p>';
+      } else if (isStale) {
+        html += '    <p class="stale-meter-empty">値がありません（データ未受信）</p>';
       }
 
       html += '  </div>';
       html += '</div>';
       return html;
+    }
+
+    function isStaleMeter(meter) {
+      if (!meter.last_updated) {
+        return true;
+      }
+
+      var lastUpdated = new Date(meter.last_updated);
+      if (isNaN(lastUpdated.getTime())) {
+        return true;
+      }
+
+      return (Date.now() - lastUpdated.getTime()) >= STALE_METER_THRESHOLD_MS;
     }
 
     // ============================================================
@@ -412,6 +519,13 @@
     function renderCharts() {
       for (var i = 0; i < metersData.length; i++) {
         (function(meter) {
+          if (isStaleMeter(meter)) {
+            if (charts[meter.device_id]) {
+              charts[meter.device_id].destroy();
+              delete charts[meter.device_id];
+            }
+            return;
+          }
           fetchHistory(meter.device_id, currentTimeScale, function(err, data) {
             if (err) {
               return;
