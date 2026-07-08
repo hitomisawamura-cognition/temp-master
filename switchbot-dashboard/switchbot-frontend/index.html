@@ -23,6 +23,11 @@
       justify-content: space-between;
       align-items: center;
     }
+    .meter-panel-title {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+    }
     .meter-stats .label {
       font-size: 14px;
       margin-right: 6px;
@@ -88,8 +93,7 @@
     }
     .stale-meter-badge {
       display: inline-block;
-      float: right;
-      margin-top: 1px;
+      margin-left: 8px;
     }
     .stale-meter-empty {
       color: #8a6d3b;
@@ -411,7 +415,7 @@
 
     function renderMeterGrid(meters) {
       if (!meters.length) {
-        return '<div class="alert alert-info">表示できるメーターがありません。</div>';
+        return '';
       }
 
       var html = '<div class="row">';
@@ -451,10 +455,12 @@
       html += '<div class="panel panel-default' + (isStale ? ' stale-meters-panel' : '') + '">';
       html += '  <div class="panel-heading">';
       html += '    <div class="meter-panel-header">';
-      html += '      <strong>' + deviceName + '</strong>';
+      html += '      <div class="meter-panel-title">';
+      html += '        <strong>' + deviceName + '</strong>';
       if (isStale) {
-        html += '      <span class="label label-warning stale-meter-badge">7日以上未更新</span>';
+        html += '        <span class="label label-warning stale-meter-badge">7日以上未更新</span>';
       }
+      html += '      </div>';
       html += '      <span class="device-type-tag">' + deviceType + '</span>';
       html += '    </div>';
       html += '  </div>';
@@ -472,9 +478,13 @@
       }
 
       html += '    </div>';
-      html += '    <div class="meter-chart-wrap">';
-      html += '      <canvas id="chart-' + deviceId + '"></canvas>';
-      html += '    </div>';
+      if (isStale) {
+        html += '    <p class="stale-meter-empty">履歴データの取得対象外</p>';
+      } else {
+        html += '    <div class="meter-chart-wrap">';
+        html += '      <canvas id="chart-' + deviceId + '"></canvas>';
+        html += '    </div>';
+      }
 
       if (meter.last_updated) {
         var d = new Date(meter.last_updated);
@@ -509,6 +519,9 @@
     function renderCharts() {
       for (var i = 0; i < metersData.length; i++) {
         (function(meter) {
+          if (isStaleMeter(meter)) {
+            return;
+          }
           fetchHistory(meter.device_id, currentTimeScale, function(err, data) {
             if (err) {
               return;
