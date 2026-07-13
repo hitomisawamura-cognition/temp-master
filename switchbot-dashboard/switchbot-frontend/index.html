@@ -186,9 +186,9 @@
     // Global variables
     // ============================================================
 
-    // When served from the FastAPI backend (same origin), API_URL stays empty.
-    // When opened directly as a file:// URL, fall back to the production backend.
-    var API_URL = (window.location.protocol === 'file:') ? 'https://temp-master.fly.dev' : '';
+    // Data is served by the snakeroom backend, which actively collects readings
+    // from the same SwitchBot devices. Point all API calls there.
+    var API_URL = 'https://snakeroom.fly.dev';
 
     var REFRESH_INTERVAL = 30000;
     var currentTimeScale = 'day';
