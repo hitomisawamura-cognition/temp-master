@@ -2,33 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Temp Master Dashboard</title>
 
-  <!-- Bootstrap 3.3.7 CSS -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+  <!-- Bootstrap 5 CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css">
 
   <style>
     body {
       background-color: #f5f5f5;
       padding-top: 70px;
     }
-    .navbar-status {
-      margin-top: 15px;
-      margin-right: 15px;
-    }
-    .meter-panel-header {
+    .meter-card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    .meter-panel-title {
+    .meter-card-title {
       display: flex;
       align-items: center;
       flex-wrap: wrap;
     }
-    .meter-stats .label {
+    .meter-stats .badge {
       font-size: 14px;
       margin-right: 6px;
       padding: 4px 8px;
@@ -56,7 +51,7 @@
       text-align: center;
       padding: 40px 0;
     }
-    .panel-default > .panel-heading {
+    .card > .card-header {
       background-color: #f8f8f8;
     }
     .device-type-tag {
@@ -83,11 +78,11 @@
       color: #8a6d3b;
       font-size: 12px;
     }
-    .stale-meters-panel {
+    .stale-meters-card {
       border-color: #f0ad4e;
       background-color: #fcf8e3;
     }
-    .stale-meters-panel > .panel-heading {
+    .stale-meters-card > .card-header {
       background-color: #fcf8e3;
       border-bottom-color: #f0ad4e;
     }
@@ -104,29 +99,29 @@
 <body>
 
   <!-- Navbar -->
-  <nav class="navbar navbar-default navbar-fixed-top">
+  <nav class="navbar navbar-expand navbar-light bg-light fixed-top border-bottom">
     <div class="container-fluid">
-      <div class="navbar-header">
-        <a class="navbar-brand" href="#">Temp Master Dashboard</a>
-      </div>
-      <ul class="nav navbar-nav">
-        <li class="active"><a href="/">Dashboard</a></li>
+      <a class="navbar-brand" href="#">Temp Master Dashboard</a>
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" href="/">Dashboard</a>
+        </li>
       </ul>
-      <div class="navbar-status pull-right">
-        <span id="connection-status" class="label label-success">Connected</span>
-      </div>
+      <span id="connection-status" class="badge text-bg-success">Connected</span>
     </div>
   </nav>
 
   <div class="container-fluid">
 
     <!-- Controls -->
-    <div class="panel panel-default">
-      <div class="panel-body">
-        <form class="form-inline">
-          <div class="form-group" style="margin-right: 20px;">
-            <label for="time-scale-select" style="margin-right: 8px;">Time Range:</label>
-            <select id="time-scale-select" class="form-control">
+    <div class="card mb-3">
+      <div class="card-body">
+        <form class="row row-cols-lg-auto g-3 align-items-center">
+          <div class="col-12">
+            <label class="form-label mb-0 me-2" for="time-scale-select">Time Range:</label>
+          </div>
+          <div class="col-12">
+            <select id="time-scale-select" class="form-select">
               <option value="hour">Last Hour</option>
               <option value="day" selected>Last 24 Hours</option>
               <option value="week">Last 7 Days</option>
@@ -134,20 +129,24 @@
               <option value="year">Last Year</option>
             </select>
           </div>
-          <button type="button" id="btn-refresh" class="btn btn-primary">Refresh Data</button>
-          <button type="button" id="btn-backup" class="btn btn-default">Download Backup</button>
+          <div class="col-12">
+            <button type="button" id="btn-refresh" class="btn btn-primary">Refresh Data</button>
+          </div>
+          <div class="col-12">
+            <button type="button" id="btn-backup" class="btn btn-secondary">Download Backup</button>
+          </div>
         </form>
       </div>
     </div>
 
     <!-- Status Bar -->
-    <div id="status-bar" class="alert alert-info" style="display: none;">
+    <div id="status-bar" class="alert alert-info d-none">
       <span id="status-meters-count">Monitoring 0 meters</span>
-      <span class="pull-right" id="status-last-refresh"></span>
+      <span class="float-end" id="status-last-refresh"></span>
     </div>
 
     <!-- Rate Limit Warning -->
-    <div id="rate-limit-warning" class="alert alert-warning" style="display: none;">
+    <div id="rate-limit-warning" class="alert alert-warning d-none">
       <strong>Rate Limited.</strong>
       <span id="rate-limit-text">SwitchBot API rate limit reached.</span>
     </div>
@@ -158,7 +157,7 @@
     </div>
 
     <!-- Error -->
-    <div id="error" class="alert alert-danger" style="display: none;">
+    <div id="error" class="alert alert-danger d-none">
       <strong>Error.</strong> <span id="error-text">Failed to fetch data.</span>
     </div>
 
@@ -167,19 +166,16 @@
 
     <!-- Footer -->
     <footer>
-      Temp Master Dashboard v1.0 - Built with jQuery + Bootstrap 3
+      Temp Master Dashboard v1.0 - Built with Bootstrap 5
     </footer>
 
   </div>
 
-  <!-- jQuery 1.12.x -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <!-- Bootstrap 5 JS bundle -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
 
-  <!-- Bootstrap 3.3.7 JS -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
-
-  <!-- Chart.js 2.9.x -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+  <!-- Chart.js 4 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 
   <script>
     // ============================================================
@@ -188,16 +184,16 @@
 
     // Data is served by the snakeroom backend, which actively collects readings
     // from the same SwitchBot devices. Point all API calls there.
-    var API_URL = 'https://snakeroom.fly.dev';
+    const API_URL = 'https://snakeroom.fly.dev';
 
-    var REFRESH_INTERVAL = 30000;
-    var currentTimeScale = 'day';
-    var STALE_METER_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000;
-    var metersData = [];
-    var statusData = null;
-    var charts = {}; // device_id -> Chart instance map
+    const REFRESH_INTERVAL = 30000;
+    const STALE_METER_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000;
+    let currentTimeScale = 'day';
+    let metersData = [];
+    let statusData = null;
+    let charts = {}; // device_id -> Chart instance map
 
-    var DISPLAY_NAMES = {
+    const DISPLAY_NAMES = {
       'Bedroom Meter': '第1蒸留塔 (T-101)',
       'Living Meter': '第2蒸留塔 (T-102)',
       '2世': '反応器 (R-201)',
@@ -240,14 +236,26 @@
       return n < 10 ? '0' + n : '' + n;
     }
 
+    function show(selector) {
+      document.querySelector(selector).classList.remove('d-none');
+    }
+
+    function hide(selector) {
+      document.querySelector(selector).classList.add('d-none');
+    }
+
+    function setText(selector, text) {
+      document.querySelector(selector).textContent = text;
+    }
+
     // Ported from src/components/Chart.tsx (lines 33-49)
     function formatTimestamp(timestamp, timeScale) {
-      var date = new Date(timestamp);
-      var hours = pad2(date.getHours());
-      var minutes = pad2(date.getMinutes());
-      var dayShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
-      var monthShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getMonth()];
-      var dayNum = date.getDate();
+      const date = new Date(timestamp);
+      const hours = pad2(date.getHours());
+      const minutes = pad2(date.getMinutes());
+      const dayShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
+      const monthShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getMonth()];
+      const dayNum = date.getDate();
 
       switch (timeScale) {
         case 'hour':
@@ -266,95 +274,78 @@
     }
 
     // ============================================================
-    // API calls (jQuery $.ajax)
+    // API calls (fetch)
     // ============================================================
 
-    function fetchMeters(onSuccess, onError) {
-      $.ajax({
-        url: API_URL + '/api/meters',
-        type: 'GET',
-        dataType: 'json',
-        success: function(data) {
-          if (onSuccess) onSuccess(data);
-        },
-        error: function(xhr, status, err) {
-          if (onError) onError(err || status);
-        }
-      });
+    async function requestJson(path, options) {
+      const response = await fetch(API_URL + path, options);
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
+      }
+      return response.json();
     }
 
-    function fetchStatus(onSuccess, onError) {
-      $.ajax({
-        url: API_URL + '/api/status',
-        type: 'GET',
-        dataType: 'json',
-        success: function(data) {
-          if (onSuccess) onSuccess(data);
-        },
-        error: function(xhr, status, err) {
-          if (onError) onError(err || status);
-        }
-      });
+    function fetchMeters() {
+      return requestJson('/api/meters');
     }
 
-    function fetchHistory(deviceId, timeScale, callback) {
-      $.ajax({
-        url: API_URL + '/api/meters/' + encodeURIComponent(deviceId) + '/history',
-        type: 'GET',
-        data: { time_scale: timeScale },
-        dataType: 'json',
-        success: function(data) {
-          callback(null, data);
-        },
-        error: function(xhr, status, err) {
-          callback(err || status, null);
-        }
-      });
+    function fetchStatus() {
+      return requestJson('/api/status');
     }
 
-    function triggerRefresh(callback) {
-      $.ajax({
-        url: API_URL + '/api/meters/refresh',
-        type: 'POST',
-        success: function(data) {
-          if (callback) callback(null, data);
-        },
-        error: function(xhr, status, err) {
-          if (callback) callback(err || status, null);
-        }
-      });
+    function fetchHistory(deviceId, timeScale) {
+      const query = new URLSearchParams({ time_scale: timeScale });
+      return requestJson('/api/meters/' + encodeURIComponent(deviceId) + '/history?' + query);
+    }
+
+    function triggerRefresh() {
+      return requestJson('/api/meters/refresh', { method: 'POST' });
     }
 
     // ============================================================
-    // Top-level data load (nested callbacks, no Promise.all)
+    // Top-level data load
     // ============================================================
 
-    function fetchData() {
-      fetchMeters(function(metersResp) {
-        fetchStatus(function(statusResp) {
-          metersData = (metersResp && metersResp.meters) ? metersResp.meters : [];
-          statusData = statusResp;
+    async function fetchData() {
+      let metersResp;
+      try {
+        metersResp = await fetchMeters();
+      } catch (err) {
+        showError('Failed to fetch meters: ' + err.message);
+        return;
+      }
 
-          $('#loading').hide();
-          $('#error').hide();
-          $('#connection-status').removeClass('label-danger').addClass('label-success').text('Connected');
+      let statusResp;
+      try {
+        statusResp = await fetchStatus();
+      } catch (err) {
+        showError('Failed to fetch status: ' + err.message);
+        return;
+      }
 
-          updateStatusBar();
-          renderMeters();
-          renderCharts();
-        }, function(err) {
-          showError('Failed to fetch status: ' + err);
-        });
-      }, function(err) {
-        showError('Failed to fetch meters: ' + err);
-      });
+      metersData = (metersResp && metersResp.meters) ? metersResp.meters : [];
+      statusData = statusResp;
+
+      hide('#loading');
+      hide('#error');
+      const status = document.querySelector('#connection-status');
+      status.classList.remove('text-bg-danger');
+      status.classList.add('text-bg-success');
+      status.textContent = 'Connected';
+
+      updateStatusBar();
+      renderMeters();
+      renderCharts();
     }
 
     function showError(msg) {
-      $('#loading').hide();
-      $('#error-text').text(msg);
-      $('#error').show();
-      $('#connection-status').removeClass('label-success').addClass('label-danger').text('Disconnected');
+      hide('#loading');
+      setText('#error-text', msg);
+      show('#error');
+      const status = document.querySelector('#connection-status');
+      status.classList.remove('text-bg-success');
+      status.classList.add('text-bg-danger');
+      status.textContent = 'Disconnected';
     }
 
     // ============================================================
@@ -363,25 +354,25 @@
 
     function updateStatusBar() {
       if (!statusData) {
-        $('#status-bar').hide();
+        hide('#status-bar');
         return;
       }
 
-      var count = statusData.meters_count || 0;
-      var noun = count === 1 ? 'meter' : 'meters';
-      $('#status-meters-count').text('Monitoring ' + count + ' ' + noun);
+      const count = statusData.meters_count || 0;
+      const noun = count === 1 ? 'meter' : 'meters';
+      setText('#status-meters-count', 'Monitoring ' + count + ' ' + noun);
 
-      var now = new Date();
-      var refreshText = 'Last refresh: ' + pad2(now.getHours()) + ':' + pad2(now.getMinutes()) + ':' + pad2(now.getSeconds());
-      $('#status-last-refresh').text(refreshText);
-      $('#status-bar').show();
+      const now = new Date();
+      const refreshText = 'Last refresh: ' + pad2(now.getHours()) + ':' + pad2(now.getMinutes()) + ':' + pad2(now.getSeconds());
+      setText('#status-last-refresh', refreshText);
+      show('#status-bar');
 
       if (statusData.is_rate_limited) {
-        var remaining = statusData.backoff_remaining || 0;
-        $('#rate-limit-text').text('SwitchBot API rate limit reached. Retry in ' + remaining + ' seconds.');
-        $('#rate-limit-warning').show();
+        const remaining = statusData.backoff_remaining || 0;
+        setText('#rate-limit-text', 'SwitchBot API rate limit reached. Retry in ' + remaining + ' seconds.');
+        show('#rate-limit-warning');
       } else {
-        $('#rate-limit-warning').hide();
+        hide('#rate-limit-warning');
       }
     }
 
@@ -394,11 +385,10 @@
     }
 
     function renderDefaultView() {
-      var activeMeters = [];
-      var staleMeters = [];
+      const activeMeters = [];
+      const staleMeters = [];
 
-      for (var i = 0; i < metersData.length; i++) {
-        var meter = metersData[i];
+      for (const meter of metersData) {
         if (isStaleMeter(meter)) {
           staleMeters.push(meter);
         } else {
@@ -406,11 +396,11 @@
         }
       }
 
-      var html = renderMeterGrid(activeMeters);
+      let html = renderMeterGrid(activeMeters);
       if (staleMeters.length > 0) {
         html += renderStaleMetersSection(staleMeters);
       }
-      $('#meters-container').html(html);
+      document.querySelector('#meters-container').innerHTML = html;
     }
 
     function renderMeterGrid(meters) {
@@ -418,26 +408,26 @@
         return '';
       }
 
-      var html = '<div class="row">';
-      for (var i = 0; i < meters.length; i++) {
-        html += '<div class="col-md-4 col-sm-6">' + createMeterPanel(meters[i], false) + '</div>';
+      let html = '<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">';
+      for (const meter of meters) {
+        html += '<div class="col">' + createMeterCard(meter, false) + '</div>';
       }
       html += '</div>';
       return html;
     }
 
     function renderStaleMetersSection(meters) {
-      var html = '';
-      html += '<div class="meter-section">';
+      let html = '';
+      html += '<div class="meter-section mt-4">';
       html += '  <div class="meter-section-header">';
-      html += '    <h3 class="meter-section-title"><span class="glyphicon glyphicon-warning-sign" aria-hidden="true"></span> 未更新のメーター</h3>';
+      html += '    <h3 class="meter-section-title"><span aria-hidden="true">\u26a0</span> 未更新のメーター</h3>';
       html += '    <p class="meter-section-subtitle">1週間以上更新されていないデバイス</p>';
       html += '  </div>';
-      html += '  <div class="panel panel-warning stale-meters-panel">';
-      html += '    <div class="panel-body">';
-      html += '      <div class="row">';
-      for (var i = 0; i < meters.length; i++) {
-        html += '<div class="col-md-4 col-sm-6">' + createMeterPanel(meters[i], true) + '</div>';
+      html += '  <div class="card stale-meters-card">';
+      html += '    <div class="card-body">';
+      html += '      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">';
+      for (const meter of meters) {
+        html += '<div class="col">' + createMeterCard(meter, true) + '</div>';
       }
       html += '      </div>';
       html += '    </div>';
@@ -446,35 +436,35 @@
       return html;
     }
 
-    function createMeterPanel(meter, isStale) {
-      var deviceId = escapeHtml(meter.device_id);
-      var deviceName = escapeHtml(getDisplayName(meter.device_name));
-      var deviceType = escapeHtml(meter.device_type);
+    function createMeterCard(meter, isStale) {
+      const deviceId = escapeHtml(meter.device_id);
+      const deviceName = escapeHtml(getDisplayName(meter.device_name));
+      const deviceType = escapeHtml(meter.device_type);
 
-      var html = '';
-      html += '<div class="panel panel-default">';
-      html += '  <div class="panel-heading">';
-      html += '    <div class="meter-panel-header">';
-      html += '      <div class="meter-panel-title">';
+      let html = '';
+      html += '<div class="card h-100">';
+      html += '  <div class="card-header">';
+      html += '    <div class="meter-card-header">';
+      html += '      <div class="meter-card-title">';
       html += '        <strong>' + deviceName + '</strong>';
       if (isStale) {
-        html += '        <span class="label label-warning stale-meter-badge">7日以上未更新</span>';
+        html += '        <span class="badge text-bg-warning stale-meter-badge">7日以上未更新</span>';
       }
       html += '      </div>';
       html += '      <span class="device-type-tag">' + deviceType + '</span>';
       html += '    </div>';
       html += '  </div>';
-      html += '  <div class="panel-body">';
+      html += '  <div class="card-body">';
       html += '    <div class="meter-stats">';
 
       if (meter.current_temperature !== null && meter.current_temperature !== undefined) {
-        html += '<span class="label label-danger">' + escapeHtml(meter.current_temperature) + '\u00b0C</span>';
+        html += '<span class="badge text-bg-danger">' + escapeHtml(meter.current_temperature) + '\u00b0C</span>';
       }
       if (meter.current_humidity !== null && meter.current_humidity !== undefined) {
-        html += '<span class="label label-info">' + escapeHtml(meter.current_humidity) + '%</span>';
+        html += '<span class="badge text-bg-info">' + escapeHtml(meter.current_humidity) + '%</span>';
       }
       if (meter.battery !== null && meter.battery !== undefined) {
-        html += '<span class="label label-success">' + escapeHtml(meter.battery) + '%</span>';
+        html += '<span class="badge text-bg-success">' + escapeHtml(meter.battery) + '%</span>';
       }
 
       html += '    </div>';
@@ -487,8 +477,7 @@
       }
 
       if (meter.last_updated) {
-        var d = new Date(meter.last_updated);
-        var lastUpdatedStr = d.toLocaleString();
+        const lastUpdatedStr = new Date(meter.last_updated).toLocaleString();
         html += '    <p class="meter-last-updated">Last updated: ' + escapeHtml(lastUpdatedStr) + '</p>';
       } else if (isStale) {
         html += '    <p class="stale-meter-empty">値がありません（データ未受信）</p>';
@@ -504,7 +493,7 @@
         return true;
       }
 
-      var lastUpdated = new Date(meter.last_updated);
+      const lastUpdated = new Date(meter.last_updated);
       if (isNaN(lastUpdated.getTime())) {
         return true;
       }
@@ -513,47 +502,40 @@
     }
 
     // ============================================================
-    // Chart rendering (Chart.js v2 API)
+    // Chart rendering (Chart.js v4 API)
     // ============================================================
 
     function renderCharts() {
-      for (var i = 0; i < metersData.length; i++) {
-        (function(meter) {
-          if (isStaleMeter(meter)) {
-            if (charts[meter.device_id]) {
-              charts[meter.device_id].destroy();
-              delete charts[meter.device_id];
-            }
-            return;
-          }
-          fetchHistory(meter.device_id, currentTimeScale, function(err, data) {
-            if (err) {
-              return;
-            }
-            var history = (data && data.history) ? data.history : [];
+      for (const meter of metersData) {
+        if (isStaleMeter(meter)) {
+          destroyChart(meter.device_id);
+          continue;
+        }
+        fetchHistory(meter.device_id, currentTimeScale)
+          .then(function(data) {
+            const history = (data && data.history) ? data.history : [];
             renderSingleChart(meter.device_id, history);
+          })
+          .catch(function() {
+            // History for a single meter is non-critical; keep the rest of the dashboard.
           });
-        })(metersData[i]);
       }
     }
 
     function renderSingleChart(deviceId, history) {
-      var canvas = document.getElementById('chart-' + deviceId);
+      const canvas = document.getElementById('chart-' + deviceId);
       if (!canvas) return;
-      var ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext('2d');
 
-      var labels = [];
-      var temperatures = [];
-      for (var i = 0; i < history.length; i++) {
-        labels.push(formatTimestamp(history[i].timestamp, currentTimeScale));
-        temperatures.push(history[i].temperature);
+      const labels = [];
+      const temperatures = [];
+      for (const entry of history) {
+        labels.push(formatTimestamp(entry.timestamp, currentTimeScale));
+        temperatures.push(entry.temperature);
       }
 
       // Destroy existing chart instance before re-creating
-      if (charts[deviceId]) {
-        charts[deviceId].destroy();
-        delete charts[deviceId];
-      }
+      destroyChart(deviceId);
 
       charts[deviceId] = new Chart(ctx, {
         type: 'line',
@@ -571,63 +553,70 @@
             pointHoverRadius: 5,
             pointHoverBackgroundColor: '#5bc0de',
             fill: true,
-            lineTension: 0.4
+            tension: 0.4
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          legend: {
-            display: false
-          },
-          tooltips: {
-            mode: 'index',
-            intersect: false,
-            callbacks: {
-              label: function(tooltipItem) {
-                var v = tooltipItem.yLabel;
-                if (v === null || v === undefined) return '';
-                return v.toFixed(1) + '\u00b0C';
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              callbacks: {
+                label: function(context) {
+                  const v = context.parsed.y;
+                  if (v === null || v === undefined) return '';
+                  return v.toFixed(1) + '\u00b0C';
+                }
               }
             }
           },
           scales: {
-            xAxes: [{
+            x: {
               display: true,
-              gridLines: {
+              grid: {
                 display: true,
                 color: 'rgba(0, 0, 0, 0.05)'
               },
               ticks: {
                 maxTicksLimit: 8,
-                fontSize: 10,
-                fontColor: '#777'
+                font: { size: 10 },
+                color: '#777'
               }
-            }],
-            yAxes: [{
+            },
+            y: {
               display: true,
-              gridLines: {
+              grid: {
                 display: true,
                 color: 'rgba(0, 0, 0, 0.05)'
               },
               ticks: {
-                fontSize: 10,
-                fontColor: '#777',
+                font: { size: 10 },
+                color: '#777',
                 callback: function(value) {
                   return value + '\u00b0';
                 }
               }
-            }]
+            }
           }
         }
       });
     }
 
+    function destroyChart(deviceId) {
+      if (charts[deviceId]) {
+        charts[deviceId].destroy();
+        delete charts[deviceId];
+      }
+    }
+
     function destroyAllCharts() {
-      for (var key in charts) {
-        if (charts.hasOwnProperty(key) && charts[key]) {
-          charts[key].destroy();
-        }
+      for (const key of Object.keys(charts)) {
+        destroyChart(key);
       }
       charts = {};
     }
@@ -636,29 +625,31 @@
     // Init
     // ============================================================
 
-    $(document).ready(function() {
+    document.addEventListener('DOMContentLoaded', function() {
       fetchData();
       setInterval(fetchData, REFRESH_INTERVAL);
 
-      $('#time-scale-select').change(function() {
-        currentTimeScale = $(this).val();
+      document.querySelector('#time-scale-select').addEventListener('change', function(event) {
+        currentTimeScale = event.target.value;
         destroyAllCharts();
         renderCharts();
       });
 
-      $('#btn-refresh').click(function() {
-        var $btn = $(this);
-        $btn.prop('disabled', true).text('Refreshing...');
-        triggerRefresh(function(err) {
-          if (err) {
-            showError('Failed to refresh: ' + err);
-          }
-          fetchData();
-          $btn.prop('disabled', false).text('Refresh Data');
-        });
+      document.querySelector('#btn-refresh').addEventListener('click', async function() {
+        const btn = this;
+        btn.disabled = true;
+        btn.textContent = 'Refreshing...';
+        try {
+          await triggerRefresh();
+        } catch (err) {
+          showError('Failed to refresh: ' + err.message);
+        }
+        await fetchData();
+        btn.disabled = false;
+        btn.textContent = 'Refresh Data';
       });
 
-      $('#btn-backup').click(function() {
+      document.querySelector('#btn-backup').addEventListener('click', function() {
         window.open(API_URL + '/api/backup', '_blank');
       });
     });
