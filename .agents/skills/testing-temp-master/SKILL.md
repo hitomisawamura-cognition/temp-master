@@ -20,8 +20,11 @@ description: Test the Temp Master SwitchBot dashboard locally. Use when verifyin
 
 ### 1. Install dependencies
 
+The default `python3` is not 3.12, so point Poetry at a 3.12 interpreter first:
+
 ```bash
 cd switchbot-dashboard/switchbot-backend
+poetry env use $(pyenv root)/versions/3.12.8/bin/python3.12
 poetry install --no-interaction
 ```
 
@@ -32,6 +35,8 @@ cd switchbot-dashboard/switchbot-backend
 echo "SWITCHBOT_TOKEN=${SWITCHBOT_TOKEN}" > .env
 echo "SWITCHBOT_SECRET=${SWITCHBOT_SECRET}" >> .env
 ```
+
+An empty `.env` is enough for UI testing: the frontend's `API_URL` is hardcoded to `https://snakeroom.fly.dev`, so credentials are only needed for local backend data collection.
 
 ### 3. Symlink frontend static files
 
@@ -70,6 +75,7 @@ The frontend is served at `http://localhost:8000/` and the API docs at `http://l
 - Time Range selector: Last Hour / Last 24 Hours / Last 7 Days / Last 30 Days / Last Year
 - Charts: Canvas elements rendered with Chart.js line charts
 - Refresh Data button triggers data reload
+- Download Backup opens `/api/backup` in a new tab; against the remote API it returns `Not authenticated` without snakeroom credentials
 
 ## Running Backend Tests
 
