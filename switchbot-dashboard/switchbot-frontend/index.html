@@ -82,10 +82,6 @@
       border-color: #f0ad4e;
       background-color: #fcf8e3;
     }
-    .stale-meters-card > .card-header {
-      background-color: #fcf8e3;
-      border-bottom-color: #f0ad4e;
-    }
     .stale-meter-badge {
       display: inline-block;
       margin-left: 8px;
@@ -336,6 +332,12 @@
       updateStatusBar();
       renderMeters();
       renderCharts();
+    }
+
+    function refreshDashboard() {
+      fetchData().catch(function(err) {
+        showError('Failed to load dashboard: ' + err.message);
+      });
     }
 
     function showError(msg) {
@@ -626,8 +628,8 @@
     // ============================================================
 
     document.addEventListener('DOMContentLoaded', function() {
-      fetchData();
-      setInterval(fetchData, REFRESH_INTERVAL);
+      refreshDashboard();
+      setInterval(refreshDashboard, REFRESH_INTERVAL);
 
       document.querySelector('#time-scale-select').addEventListener('change', function(event) {
         currentTimeScale = event.target.value;
@@ -640,13 +642,16 @@
         btn.disabled = true;
         btn.textContent = 'Refreshing...';
         try {
-          await triggerRefresh();
-        } catch (err) {
-          showError('Failed to refresh: ' + err.message);
+          try {
+            await triggerRefresh();
+          } catch (err) {
+            showError('Failed to refresh: ' + err.message);
+          }
+          await fetchData();
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Refresh Data';
         }
-        await fetchData();
-        btn.disabled = false;
-        btn.textContent = 'Refresh Data';
       });
 
       document.querySelector('#btn-backup').addEventListener('click', function() {
