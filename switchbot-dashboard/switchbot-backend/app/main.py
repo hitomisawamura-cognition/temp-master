@@ -15,7 +15,7 @@ import httpx
 from dotenv import load_dotenv
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -28,6 +28,16 @@ DB_PATH = os.getenv("DB_PATH", "/data/app.db" if os.path.exists("/data") else "a
 SWITCHBOT_API_BASE = "https://api.switch-bot.com/v1.1"
 SWITCHBOT_TOKEN = os.getenv("SWITCHBOT_TOKEN", "")
 SWITCHBOT_SECRET = os.getenv("SWITCHBOT_SECRET", "")
+
+# Token protecting administrative endpoints (database export / import).
+# When unset those endpoints are disabled rather than served anonymously.
+ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "")
+
+# Comma separated list of origins allowed for cross-origin browser requests.
+# The frontend is served from the same origin in production, so the default is empty.
+ALLOWED_ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+
+REFRESH_MIN_INTERVAL = 60
 
 DATA_COLLECTION_INTERVAL = 3600
 RATE_LIMIT_BACKOFF_BASE = 60
@@ -385,6 +395,28 @@ def generate_switchbot_headers() -> dict:
     }
 
 
+def require_admin_token(request: Request) -> None:
+    """Reject requests that do not carry the configured admin bearer token."""
+    if not ADMIN_TOKEN:
+        raise HTTPException(
+            status_code=503,
+            detail="Administrative endpoints are disabled because ADMIN_TOKEN is not configured",
+        )
+
+    scheme, _, credentials = request.headers.get("Authorization", "").partition(" ")
+    if scheme.lower() != "bearer" or not hmac.compare_digest(credentials, ADMIN_TOKEN):
+        raise HTTPException(status_code=401, detail="Invalid or missing admin token")
+
+
+def parse_iso_timestamp(value: Optional[str], field_name: str) -> Optional[datetime]:
+    if value is None:
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid ISO 8601 timestamp for {field_name}")
+
+
 async def call_switchbot_api(endpoint: str, device_id: Optional[str] = None) -> dict:
     if time.time() < data_store.backoff_until:
         raise HTTPException(
@@ -435,7 +467,7 @@ async def call_switchbot_api(endpoint: str, device_id: Optional[str] = None) -> 
                 )
                 raise HTTPException(
                     status_code=response.status_code,
-                    detail=f"SwitchBot API error: {response.text}",
+                    detail="SwitchBot API error",
                 )
             
             await save_latency_log(
@@ -459,7 +491,7 @@ async def call_switchbot_api(endpoint: str, device_id: Optional[str] = None) -> 
                 device_id=device_id,
                 error_message=f"Request error: {str(e)}",
             )
-            raise HTTPException(status_code=500, detail=f"Request error: {str(e)}")
+            raise HTTPException(status_code=500, detail="Request error while calling SwitchBot API")
 
 
 async def fetch_devices() -> list[MeterDevice]:
@@ -588,8 +620,8 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -646,6 +678,13 @@ async def refresh_meters():
     if not SWITCHBOT_TOKEN or not SWITCHBOT_SECRET:
         raise HTTPException(status_code=500, detail="SwitchBot credentials not configured")
     
+    elapsed = time.time() - data_store.last_api_call
+    if data_store.last_api_call and elapsed < REFRESH_MIN_INTERVAL:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Refresh throttled. Retry after {int(REFRESH_MIN_INTERVAL - elapsed)} seconds",
+        )
+    
     await collect_data()
     
     return {
@@ -673,11 +712,11 @@ async def get_latency_logs_endpoint(
     end_time: Optional[str] = None,
     endpoint: Optional[str] = None,
     device_id: Optional[str] = None,
-    limit: int = 100,
+    limit: int = Query(100, ge=1, le=1000),
 ):
     """Get latency logs for API calls with optional filters."""
-    start_dt = datetime.fromisoformat(start_time.replace('Z', '+00:00')) if start_time else None
-    end_dt = datetime.fromisoformat(end_time.replace('Z', '+00:00')) if end_time else None
+    start_dt = parse_iso_timestamp(start_time, "start_time")
+    end_dt = parse_iso_timestamp(end_time, "end_time")
     
     logs = await get_latency_logs(
         start_time=start_dt,
@@ -699,8 +738,8 @@ async def get_latency_stats_endpoint(
     end_time: Optional[str] = None,
 ):
     """Get aggregated latency statistics."""
-    start_dt = datetime.fromisoformat(start_time.replace('Z', '+00:00')) if start_time else None
-    end_dt = datetime.fromisoformat(end_time.replace('Z', '+00:00')) if end_time else None
+    start_dt = parse_iso_timestamp(start_time, "start_time")
+    end_dt = parse_iso_timestamp(end_time, "end_time")
     
     stats = await get_latency_stats(start_time=start_dt, end_time=end_dt)
     return stats
@@ -729,7 +768,7 @@ class ImportData(BaseModel):
     devices: list[ImportDeviceData]
 
 
-@app.post("/api/import")
+@app.post("/api/import", dependencies=[Depends(require_admin_token)])
 async def import_data(data: ImportData):
     """Import historical data from another backend instance."""
     imported_devices = 0
@@ -745,7 +784,7 @@ async def import_data(data: ImportData):
             current_temperature=device_data.current_temperature,
             current_humidity=device_data.current_humidity,
             battery=device_data.battery,
-            last_updated=datetime.fromisoformat(device_data.last_updated.replace('Z', '+00:00')) if device_data.last_updated else None,
+            last_updated=parse_iso_timestamp(device_data.last_updated, "last_updated"),
         )
         
         data_store.devices[device.device_id] = device
@@ -758,7 +797,7 @@ async def import_data(data: ImportData):
         # Import readings
         for reading_data in device_data.readings:
             reading = MeterReading(
-                timestamp=datetime.fromisoformat(reading_data.timestamp.replace('Z', '+00:00')),
+                timestamp=parse_iso_timestamp(reading_data.timestamp, "readings[].timestamp"),
                 temperature=reading_data.temperature,
                 humidity=reading_data.humidity,
                 battery=reading_data.battery,
@@ -773,7 +812,7 @@ async def import_data(data: ImportData):
     }
 
 
-@app.get("/api/backup")
+@app.get("/api/backup", dependencies=[Depends(require_admin_token)])
 async def backup_database():
     """Download the SQLite database file for backup purposes."""
     if not os.path.exists(DB_PATH):

@@ -350,7 +350,7 @@ class TestGetStatusEndpoint:
 
 
 class TestImportDataEndpoint:
-    async def test_import_data_creates_devices(self, client, reset_data_store, temp_db_path):
+    async def test_import_data_creates_devices(self, client, reset_data_store, temp_db_path, admin_headers):
         original_db_path = main_module.DB_PATH
         main_module.DB_PATH = temp_db_path
         
@@ -372,7 +372,7 @@ class TestImportDataEndpoint:
                 ]
             }
             
-            response = client.post("/api/import", json=import_data)
+            response = client.post("/api/import", json=import_data, headers=admin_headers)
             
             assert response.status_code == 200
             data = response.json()
@@ -385,7 +385,7 @@ class TestImportDataEndpoint:
         finally:
             main_module.DB_PATH = original_db_path
 
-    async def test_import_data_creates_readings(self, client, reset_data_store, temp_db_path):
+    async def test_import_data_creates_readings(self, client, reset_data_store, temp_db_path, admin_headers):
         original_db_path = main_module.DB_PATH
         main_module.DB_PATH = temp_db_path
         
@@ -416,7 +416,7 @@ class TestImportDataEndpoint:
                 ]
             }
             
-            response = client.post("/api/import", json=import_data)
+            response = client.post("/api/import", json=import_data, headers=admin_headers)
             
             assert response.status_code == 200
             data = response.json()
@@ -425,7 +425,7 @@ class TestImportDataEndpoint:
         finally:
             main_module.DB_PATH = original_db_path
 
-    async def test_import_data_multiple_devices(self, client, reset_data_store, temp_db_path):
+    async def test_import_data_multiple_devices(self, client, reset_data_store, temp_db_path, admin_headers):
         original_db_path = main_module.DB_PATH
         main_module.DB_PATH = temp_db_path
         
@@ -449,7 +449,7 @@ class TestImportDataEndpoint:
                 ]
             }
             
-            response = client.post("/api/import", json=import_data)
+            response = client.post("/api/import", json=import_data, headers=admin_headers)
             
             assert response.status_code == 200
             data = response.json()
@@ -460,12 +460,89 @@ class TestImportDataEndpoint:
         finally:
             main_module.DB_PATH = original_db_path
 
-    def test_import_data_empty_devices(self, client, reset_data_store):
+    def test_import_data_empty_devices(self, client, reset_data_store, admin_headers):
         import_data = {"devices": []}
         
-        response = client.post("/api/import", json=import_data)
+        response = client.post("/api/import", json=import_data, headers=admin_headers)
         
         assert response.status_code == 200
         data = response.json()
         assert data["imported_devices"] == 0
         assert data["imported_readings"] == 0
+
+    def test_import_data_requires_token(self, client, reset_data_store, admin_token):
+        response = client.post("/api/import", json={"devices": []})
+        
+        assert response.status_code == 401
+
+    def test_import_data_rejects_wrong_token(self, client, reset_data_store, admin_token):
+        response = client.post(
+            "/api/import",
+            json={"devices": []},
+            headers={"Authorization": "Bearer wrong-token"},
+        )
+        
+        assert response.status_code == 401
+
+    def test_import_data_disabled_without_admin_token(self, client, reset_data_store):
+        with patch.object(main_module, "ADMIN_TOKEN", ""):
+            response = client.post("/api/import", json={"devices": []})
+            
+            assert response.status_code == 503
+
+    def test_import_data_rejects_invalid_timestamp(self, client, reset_data_store, admin_headers):
+        import_data = {
+            "devices": [
+                {
+                    "device_id": "device-001",
+                    "device_name": "Meter 1",
+                    "device_type": "Meter",
+                    "last_updated": "not-a-timestamp",
+                    "readings": [],
+                }
+            ]
+        }
+        
+        response = client.post("/api/import", json=import_data, headers=admin_headers)
+        
+        assert response.status_code == 400
+
+
+class TestBackupEndpoint:
+    def test_backup_requires_token(self, client, reset_data_store, admin_token):
+        response = client.get("/api/backup")
+        
+        assert response.status_code == 401
+
+    def test_backup_disabled_without_admin_token(self, client, reset_data_store):
+        with patch.object(main_module, "ADMIN_TOKEN", ""):
+            response = client.get("/api/backup")
+            
+            assert response.status_code == 503
+
+    def test_backup_returns_database_with_token(self, client, reset_data_store, admin_headers, tmp_path):
+        db_file = tmp_path / "backup.db"
+        db_file.write_bytes(b"SQLite format 3\x00")
+        
+        with patch.object(main_module, "DB_PATH", str(db_file)):
+            response = client.get("/api/backup", headers=admin_headers)
+            
+            assert response.status_code == 200
+            assert response.headers["content-type"] == "application/x-sqlite3"
+
+
+class TestLatencyEndpointsValidation:
+    def test_latency_logs_rejects_invalid_timestamp(self, client, reset_data_store):
+        response = client.get("/api/latency-logs", params={"start_time": "not-a-timestamp"})
+        
+        assert response.status_code == 400
+
+    def test_latency_stats_rejects_invalid_timestamp(self, client, reset_data_store):
+        response = client.get("/api/latency-stats", params={"end_time": "not-a-timestamp"})
+        
+        assert response.status_code == 400
+
+    def test_latency_logs_rejects_out_of_range_limit(self, client, reset_data_store):
+        response = client.get("/api/latency-logs", params={"limit": 0})
+        
+        assert response.status_code == 422

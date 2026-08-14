@@ -67,8 +67,30 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
 
 - `GET /api/meters` - Returns list of all meter devices with current temperature (from cache)
 - `GET /api/meters/{device_id}/history` - Returns temperature history with time_scale parameter
-- `POST /api/meters/refresh` - Triggers immediate data collection
+- `POST /api/meters/refresh` - Triggers immediate data collection (throttled to once per 60 seconds)
 - `GET /api/status` - Returns backend status and configuration
+- `GET /api/latency-logs`, `GET /api/latency-stats` - SwitchBot API latency logs and statistics
+
+### Administrative endpoints (require `ADMIN_TOKEN`)
+
+- `GET /api/backup` - Downloads the SQLite database
+- `POST /api/import` - Imports devices and readings
+
+Both require the header `Authorization: Bearer $ADMIN_TOKEN`. When `ADMIN_TOKEN` is
+not set they return `503` and stay disabled.
+
+```bash
+curl -H "Authorization: Bearer $ADMIN_TOKEN" -o backup.db https://<host>/api/backup
+```
+
+## Environment variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SWITCHBOT_TOKEN` / `SWITCHBOT_SECRET` | yes | SwitchBot API v1.1 credentials |
+| `ADMIN_TOKEN` | for admin endpoints | Bearer token for `/api/backup` and `/api/import` |
+| `ALLOWED_ORIGINS` | no | Comma separated CORS origins; empty (default) allows same-origin only |
+| `DB_PATH` | no | SQLite path (defaults to `/data/app.db` when `/data` exists) |
 
 ## Notes
 
