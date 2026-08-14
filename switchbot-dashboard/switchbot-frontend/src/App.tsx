@@ -10,8 +10,15 @@ import { StatusBar } from './components/StatusBar';
 import { useMetersQuery, useRefreshMutation, useStatusQuery } from './hooks/useDashboardData';
 import { splitMetersByStaleness } from './utils/staleMeter';
 
+interface RefreshFailure {
+  message: string;
+  /** `dataUpdatedAt` of the meters query when the refresh failed. */
+  metersUpdatedAt: number;
+}
+
 export function App() {
   const [timeScale, setTimeScale] = useState<TimeScale>('day');
+  const [refreshFailure, setRefreshFailure] = useState<RefreshFailure | null>(null);
 
   const metersQuery = useMetersQuery();
   const statusQuery = useStatusQuery();
@@ -21,8 +28,22 @@ export function App() {
   const status = statusQuery.data;
   const { activeMeters, staleMeters } = splitMetersByStaleness(meters);
 
+  const handleRefresh = () => {
+    const metersUpdatedAt = metersQuery.dataUpdatedAt;
+    setRefreshFailure(null);
+    refreshMutation.mutate(undefined, {
+      onError: (mutationError) =>
+        setRefreshFailure({ message: mutationError.message, metersUpdatedAt }),
+    });
+  };
+
   const isLoading = metersQuery.isPending || statusQuery.isPending;
-  const error = metersQuery.error ?? statusQuery.error ?? refreshMutation.error;
+  // A refresh failure is only relevant until fresher meter data arrives.
+  const staleRefreshFailure =
+    refreshFailure && metersQuery.dataUpdatedAt <= refreshFailure.metersUpdatedAt
+      ? refreshFailure.message
+      : null;
+  const error = metersQuery.error?.message ?? statusQuery.error?.message ?? staleRefreshFailure;
   const isConnected = !metersQuery.isError && !statusQuery.isError;
   const lastRefresh = metersQuery.dataUpdatedAt ? new Date(metersQuery.dataUpdatedAt) : null;
 
@@ -34,7 +55,7 @@ export function App() {
         <Controls
           timeScale={timeScale}
           onTimeScaleChange={setTimeScale}
-          onRefresh={() => refreshMutation.mutate()}
+          onRefresh={handleRefresh}
           onDownloadBackup={openBackupDownload}
           isRefreshing={refreshMutation.isPending}
         />
@@ -47,7 +68,7 @@ export function App() {
 
         {error && (
           <div className="mb-4 rounded border border-danger bg-panel px-4 py-2 text-sm text-danger">
-            <strong>Error.</strong> {error.message}
+            <strong>Error.</strong> {error}
           </div>
         )}
 

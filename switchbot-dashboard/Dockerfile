@@ -6,6 +6,8 @@ COPY switchbot-frontend/package.json switchbot-frontend/package-lock.json ./
 RUN npm ci
 
 COPY switchbot-frontend/ ./
+# Empty base URL: the bundle is served by FastAPI from the same origin.
+ENV VITE_API_URL=""
 RUN npm run build
 
 # Build and run backend (serves frontend static files)

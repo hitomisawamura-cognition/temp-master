@@ -33,7 +33,7 @@ export function useRefreshMutation() {
 
   return useMutation({
     mutationFn: refreshMeters,
-    onSettled: () => {
+    onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['meters'] });
       void queryClient.invalidateQueries({ queryKey: ['status'] });
       void queryClient.invalidateQueries({ queryKey: ['history'] });

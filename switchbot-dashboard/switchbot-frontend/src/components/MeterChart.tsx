@@ -25,7 +25,9 @@ export function MeterChart({ deviceId, timeScale }: MeterChartProps) {
     return <p className="h-[200px] text-xs text-muted">Loading history...</p>;
   }
 
-  if (isError) {
+  // A failed background refetch keeps the previously fetched history, so the
+  // chart stays on screen and only a missing dataset shows the error text.
+  if (!data) {
     return <p className="h-[200px] text-xs text-muted">履歴データを取得できませんでした</p>;
   }
 
@@ -39,8 +41,11 @@ export function MeterChart({ deviceId, timeScale }: MeterChartProps) {
   }
 
   return (
-    <div className="h-[200px]">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="flex h-[200px] flex-col">
+      {isError && (
+        <p className="text-xs text-warn">履歴の更新に失敗しました（表示は前回の取得結果）</p>
+      )}
+      <ResponsiveContainer width="100%" height="100%" className="min-h-0 flex-1">
         <LineChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
           <CartesianGrid stroke={colors.chartGrid} />
           <XAxis
