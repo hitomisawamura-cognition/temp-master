@@ -152,6 +152,17 @@ def client(reset_data_store) -> TestClient:
 
 
 @pytest.fixture
+def admin_token() -> Generator[str, None, None]:
+    with patch("app.main.ADMIN_TOKEN", "test-admin-token"):
+        yield "test-admin-token"
+
+
+@pytest.fixture
+def admin_headers(admin_token: str) -> dict:
+    return {"X-Admin-Token": admin_token}
+
+
+@pytest.fixture
 def mock_switchbot_credentials():
     with patch("app.main.SWITCHBOT_TOKEN", "test-token"), \
          patch("app.main.SWITCHBOT_SECRET", "test-secret"):

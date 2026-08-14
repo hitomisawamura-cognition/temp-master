@@ -69,6 +69,22 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
 - `GET /api/meters/{device_id}/history` - Returns temperature history with time_scale parameter
 - `POST /api/meters/refresh` - Triggers immediate data collection
 - `GET /api/status` - Returns backend status and configuration
+- `GET /api/backup` - Downloads the SQLite database (requires `X-Admin-Token` header)
+- `POST /api/import` - Imports devices and readings (requires `X-Admin-Token` header)
+
+## Data management endpoints
+
+`GET /api/backup` and `POST /api/import` expose and modify the whole database, so they
+require the `ADMIN_TOKEN` shared secret sent as the `X-Admin-Token` request header.
+They return 503 while `ADMIN_TOKEN` is unset, and 401 when the header is missing or wrong.
+
+```bash
+# Fly.io
+fly secrets set ADMIN_TOKEN="$(openssl rand -hex 32)"
+
+# Backup script
+ADMIN_TOKEN=... ./backup_database.sh
+```
 
 ## Notes
 
