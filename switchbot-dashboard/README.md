@@ -4,8 +4,10 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
 
 ## Features
 
-- Temperature charts for all SwitchBot Meter devices using Recharts
-- Time scale switching (hour/day/month/year)
+- Temperature charts for all SwitchBot Meter devices using Chart.js (react-chartjs-2)
+- Dark / light theme toggle, persisted in `localStorage`
+- Time scale switching (hour/day/week/month/year)
+- Stale meters (no data for 7+ days) listed in a separate section without charts
 - Auto-refresh every 30 seconds (frontend) with background data collection every 2 minutes (backend)
 - Rate limiting protection with exponential backoff
 - All API calls are cached - GET endpoints never call SwitchBot API directly
@@ -41,6 +43,8 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
 
 ### Frontend
 
+Vite + React 18 + TypeScript. Node 20+ required.
+
 1. Navigate to the frontend directory:
    ```bash
    cd switchbot-frontend
@@ -56,6 +60,10 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
    cp .env.example .env
    ```
 
+   Set `VITE_API_URL` to the backend origin (e.g. `http://localhost:8000`) for local
+   development. Leave it empty in production, where the backend serves the built
+   frontend from the same origin and relative `/api/...` paths are used.
+
 4. Start the development server:
    ```bash
    npm run dev
@@ -69,6 +77,16 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
 - `GET /api/meters/{device_id}/history` - Returns temperature history with time_scale parameter
 - `POST /api/meters/refresh` - Triggers immediate data collection
 - `GET /api/status` - Returns backend status and configuration
+
+## Build
+
+```bash
+cd switchbot-frontend
+npm run build   # type-checks with tsc and emits dist/
+```
+
+The Docker image builds the frontend in a Node stage and copies `dist/` into the
+backend's `static/` directory, which is served with SPA fallback.
 
 ## Notes
 
