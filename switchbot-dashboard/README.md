@@ -69,6 +69,11 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
 - `GET /api/meters/{device_id}/history` - Returns temperature history with time_scale parameter
 - `POST /api/meters/refresh` - Triggers immediate data collection
 - `GET /api/status` - Returns backend status and configuration
+- `POST /api/import` - Imports historical data (requires the `X-API-Key` header)
+- `GET /api/backup` - Downloads the SQLite database (requires the `X-API-Key` header)
+
+`/api/import` and `/api/backup` are authenticated with the `ADMIN_API_KEY` environment
+variable. When it is not set, both endpoints return HTTP 503 and stay unavailable.
 
 ## Notes
 

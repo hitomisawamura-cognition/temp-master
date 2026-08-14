@@ -659,7 +659,32 @@
       });
 
       $('#btn-backup').click(function() {
-        window.open(API_URL + '/api/backup', '_blank');
+        var apiKey = window.prompt('バックアップ用の API キー (X-API-Key) を入力してください');
+        if (!apiKey) {
+          return;
+        }
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', API_URL + '/api/backup', true);
+        xhr.setRequestHeader('X-API-Key', apiKey);
+        xhr.responseType = 'blob';
+        xhr.onload = function() {
+          if (xhr.status !== 200) {
+            showError('Failed to download backup: ' + xhr.status);
+            return;
+          }
+          var url = URL.createObjectURL(xhr.response);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'switchbot_backup.db';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        };
+        xhr.onerror = function() {
+          showError('Failed to download backup');
+        };
+        xhr.send();
       });
     });
   </script>
