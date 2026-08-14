@@ -1,0 +1,69 @@
+import { useState } from 'react';
+import { openBackupDownload } from './api/client';
+import type { TimeScale } from './api/types';
+import { Controls } from './components/Controls';
+import { MeterGrid } from './components/MeterGrid';
+import { Navbar } from './components/Navbar';
+import { RateLimitWarning } from './components/RateLimitWarning';
+import { StaleMeterSection } from './components/StaleMeterSection';
+import { StatusBar } from './components/StatusBar';
+import { useMetersQuery, useRefreshMutation, useStatusQuery } from './hooks/useDashboardData';
+import { splitMetersByStaleness } from './utils/staleMeter';
+
+export function App() {
+  const [timeScale, setTimeScale] = useState<TimeScale>('day');
+
+  const metersQuery = useMetersQuery();
+  const statusQuery = useStatusQuery();
+  const refreshMutation = useRefreshMutation();
+
+  const meters = metersQuery.data?.meters ?? [];
+  const status = statusQuery.data;
+  const { activeMeters, staleMeters } = splitMetersByStaleness(meters);
+
+  const isLoading = metersQuery.isPending || statusQuery.isPending;
+  const error = metersQuery.error ?? statusQuery.error ?? refreshMutation.error;
+  const isConnected = !metersQuery.isError && !statusQuery.isError;
+  const lastRefresh = metersQuery.dataUpdatedAt ? new Date(metersQuery.dataUpdatedAt) : null;
+
+  return (
+    <div className="min-h-screen bg-bg pt-16">
+      <Navbar isConnected={isConnected} />
+
+      <main className="px-4 pb-8">
+        <Controls
+          timeScale={timeScale}
+          onTimeScaleChange={setTimeScale}
+          onRefresh={() => refreshMutation.mutate()}
+          onDownloadBackup={openBackupDownload}
+          isRefreshing={refreshMutation.isPending}
+        />
+
+        {status && <StatusBar metersCount={status.meters_count} lastRefresh={lastRefresh} />}
+
+        {status?.is_rate_limited && (
+          <RateLimitWarning backoffRemaining={status.backoff_remaining} />
+        )}
+
+        {error && (
+          <div className="mb-4 rounded border border-danger bg-panel px-4 py-2 text-sm text-danger">
+            <strong>Error.</strong> {error.message}
+          </div>
+        )}
+
+        {isLoading ? (
+          <p className="py-10 text-center text-muted">Loading temperature data...</p>
+        ) : (
+          <>
+            <MeterGrid meters={activeMeters} timeScale={timeScale} />
+            <StaleMeterSection meters={staleMeters} timeScale={timeScale} />
+          </>
+        )}
+
+        <footer className="mt-8 text-center text-xs text-muted">
+          Temp Master Dashboard v1.0 - Built with Vite + React + TypeScript
+        </footer>
+      </main>
+    </div>
+  );
+}

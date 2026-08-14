@@ -1,0 +1,51 @@
+@import 'tailwindcss';
+
+/* Tailwind colour utilities resolve through these variables. The provider
+   (src/theme/ThemeProvider.tsx) writes the active palette onto <html>, so
+   switching the theme restyles the whole dashboard. The values below are the
+   Light palette and act as the pre-hydration default. */
+@theme inline {
+  --color-bg: var(--app-bg);
+  --color-panel: var(--app-panel);
+  --color-panel-header: var(--app-panel-header);
+  --color-border: var(--app-border);
+  --color-text: var(--app-text);
+  --color-muted: var(--app-muted);
+  --color-accent: var(--app-accent);
+  --color-accent-text: var(--app-accent-text);
+  --color-danger: var(--app-danger);
+  --color-info: var(--app-info);
+  --color-success: var(--app-success);
+  --color-warn: var(--app-warn);
+  --color-warn-bg: var(--app-warn-bg);
+  --color-warn-text: var(--app-warn-text);
+  --color-chart-line: var(--app-chart-line);
+  --color-chart-grid: var(--app-chart-grid);
+}
+
+:root {
+  --app-bg: #f5f5f5;
+  --app-panel: #ffffff;
+  --app-panel-header: #f8f8f8;
+  --app-border: #dddddd;
+  --app-text: #333333;
+  --app-muted: #777777;
+  --app-accent: #337ab7;
+  --app-accent-text: #ffffff;
+  --app-danger: #d9534f;
+  --app-info: #5bc0de;
+  --app-success: #5cb85c;
+  --app-warn: #f0ad4e;
+  --app-warn-bg: #fcf8e3;
+  --app-warn-text: #8a6d3b;
+  --app-chart-line: #d9534f;
+  --app-chart-grid: rgba(0, 0, 0, 0.08);
+}
+
+body {
+  margin: 0;
+  font-family:
+    'Helvetica Neue', Helvetica, Arial, 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+  background-color: var(--app-bg);
+  color: var(--app-text);
+}
