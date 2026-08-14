@@ -70,6 +70,21 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
 - `POST /api/meters/refresh` - Triggers immediate data collection
 - `GET /api/status` - Returns backend status and configuration
 
+### バックアップ・インポートの認証
+
+`/api/backup` と `/api/import` は、既存のSwitchBot認証情報とは別の
+`BACKUP_TOKEN` によるBearer認証が必須です。トークンが未設定の場合も
+エンドポイントは利用できません。
+
+Fly.ioでは、秘密値をリポジトリへ保存せず、次のsecret名で設定してください。
+
+```bash
+fly secrets set BACKUP_TOKEN='十分に長くランダムな値' --app temp-master
+```
+
+バックアップスクリプトを使う場合は、実行環境に同じ値を
+`BACKUP_TOKEN` 環境変数として設定します。値はログやレスポンスに出力しないでください。
+
 ## Notes
 
 - Temperature history is stored in memory and resets on backend restart

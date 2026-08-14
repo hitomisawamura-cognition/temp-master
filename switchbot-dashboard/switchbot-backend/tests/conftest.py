@@ -53,6 +53,7 @@ async def reset_data_store(tmp_path) -> AsyncGenerator[DataStore, None]:
     original_is_collecting = data_store.is_collecting
     original_db_initialized = data_store.db_initialized
     original_db_path = main_module.DB_PATH
+    original_backup_token = main_module.BACKUP_TOKEN
     
     data_store.devices = {}
     data_store.history = {}
@@ -63,6 +64,7 @@ async def reset_data_store(tmp_path) -> AsyncGenerator[DataStore, None]:
     data_store.db_initialized = False
     
     main_module.DB_PATH = str(tmp_path / "test.db")
+    main_module.BACKUP_TOKEN = "test-backup-token"
     await init_database()
     
     yield data_store
@@ -75,6 +77,7 @@ async def reset_data_store(tmp_path) -> AsyncGenerator[DataStore, None]:
     data_store.is_collecting = original_is_collecting
     data_store.db_initialized = original_db_initialized
     main_module.DB_PATH = original_db_path
+    main_module.BACKUP_TOKEN = original_backup_token
 
 
 @pytest.fixture
