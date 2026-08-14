@@ -2,7 +2,7 @@ import { ThemeSwitcher } from './ThemeSwitcher';
 
 export function Navbar({ isConnected }: { isConnected: boolean }) {
   return (
-    <nav className="fixed inset-x-0 top-0 z-10 border-b border-border bg-panel-header">
+    <nav className="sticky top-0 z-10 border-b border-border bg-panel-header">
       <div className="flex flex-wrap items-center gap-4 px-4 py-3">
         <span className="text-lg font-semibold text-text">Temp Master Dashboard</span>
         <span className="text-sm text-muted">Dashboard</span>

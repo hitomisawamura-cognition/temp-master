@@ -48,10 +48,10 @@ export function App() {
   const lastRefresh = metersQuery.dataUpdatedAt ? new Date(metersQuery.dataUpdatedAt) : null;
 
   return (
-    <div className="min-h-screen bg-bg pt-16">
+    <div className="min-h-screen bg-bg">
       <Navbar isConnected={isConnected} />
 
-      <main className="px-4 pb-8">
+      <main className="px-4 pt-4 pb-8">
         <Controls
           timeScale={timeScale}
           onTimeScaleChange={setTimeScale}

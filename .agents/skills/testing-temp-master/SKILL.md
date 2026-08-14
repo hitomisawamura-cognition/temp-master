@@ -84,6 +84,39 @@ ln -s $(pwd)/dist ../switchbot-backend/static
 - Meters not updated for 7+ days appear in the "未更新のメーター" section instead of the main grid
 - Refresh Data button triggers data reload; Download Backup opens `/api/backup`
 
+## Testing Without SwitchBot Credentials (stub proxy pattern)
+
+If `SWITCHBOT_TOKEN`/`SWITCHBOT_SECRET` are not available, the frontend can be tested
+against the deployed backend `https://snakeroom.fly.dev` through the Vite dev proxy
+(this is the default `VITE_API_URL` fallback in `vite.config.ts`).
+
+Note: the deployed `/api/backup` may return **HTTP 401** even though the repo's route has
+no auth, so the Download Backup button cannot be proven against the live backend. Workaround:
+run a small local Python `http.server` proxy on another port that forwards `/api/*` to
+snakeroom while overriding selected responses, and start a second dev server pointed at it:
+
+```bash
+VITE_API_URL=http://localhost:8001 npm run dev -- --port 5174
+```
+
+Flag-file switches make backend states reachable that live data cannot produce:
+- force `/api/status` → `is_rate_limited: true, backoff_remaining: 42` (rate-limit banner)
+- force `/api/meters/*/history` → 500 (chart keeps last data + 「履歴の更新に失敗しました…」 warning)
+- force `POST /api/meters/refresh` → 500 (red `Error.` banner, must clear on next successful meters fetch)
+- serve a local `.db` for `/api/backup`
+
+All queries poll every 30s (`REFRESH_INTERVAL` in `src/hooks/useDashboardData.ts`), so after
+flipping a flag just wait ~40s for the state to appear/clear — no reload needed.
+Theme choice is stored in `localStorage` under `temp-master-theme`, and it is **per origin**,
+so switching between ports 5173/5174 resets the theme to Light.
+
+## Known Layout Issue
+
+`App.tsx` uses a fixed navbar with a hard-coded `pt-16` body offset. At viewport widths
+around ~500px the navbar wraps to two rows and overlaps the Time Range / Refresh Data
+controls, blocking clicks in the overlapped strip. Check narrow widths when touching the
+navbar or controls (resize with `wmctrl -r :ACTIVE: -e 0,0,0,520,760`).
+
 ## Running Backend Tests
 
 ```bash
