@@ -110,12 +110,13 @@ flipping a flag just wait ~40s for the state to appear/clear — no reload neede
 Theme choice is stored in `localStorage` under `temp-master-theme`, and it is **per origin**,
 so switching between ports 5173/5174 resets the theme to Light.
 
-## Known Layout Issue
+## Layout Regression To Watch
 
-`App.tsx` uses a fixed navbar with a hard-coded `pt-16` body offset. At viewport widths
-around ~500px the navbar wraps to two rows and overlaps the Time Range / Refresh Data
-controls, blocking clicks in the overlapped strip. Check narrow widths when touching the
-navbar or controls (resize with `wmctrl -r :ACTIVE: -e 0,0,0,520,760`).
+The navbar is `sticky top-0` in normal flow. Making it `fixed` again reintroduces a
+hard-coded body offset that no longer matches the navbar height once it wraps at narrow
+widths, covering the Time Range / Refresh Data controls and swallowing clicks. When
+touching the navbar or controls, resize to ~520px (`wmctrl -r :ACTIVE: -e 0,0,0,520,760`)
+and confirm a click on the **top edge** of `Refresh Data` still works.
 
 ## Running Backend Tests
 
