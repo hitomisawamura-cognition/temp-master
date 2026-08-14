@@ -15,7 +15,7 @@ import httpx
 from dotenv import load_dotenv
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -28,6 +28,7 @@ DB_PATH = os.getenv("DB_PATH", "/data/app.db" if os.path.exists("/data") else "a
 SWITCHBOT_API_BASE = "https://api.switch-bot.com/v1.1"
 SWITCHBOT_TOKEN = os.getenv("SWITCHBOT_TOKEN", "")
 SWITCHBOT_SECRET = os.getenv("SWITCHBOT_SECRET", "")
+BACKUP_TOKEN = os.getenv("BACKUP_TOKEN", "")
 
 DATA_COLLECTION_INTERVAL = 3600
 RATE_LIMIT_BACKOFF_BASE = 60
@@ -595,6 +596,23 @@ app.add_middleware(
 )
 
 
+def require_backup_token(request: Request) -> None:
+    authorization = request.headers.get("Authorization", "")
+    scheme, separator, token = authorization.partition(" ")
+
+    if (
+        not BACKUP_TOKEN
+        or not separator
+        or scheme.lower() != "bearer"
+        or not hmac.compare_digest(token, BACKUP_TOKEN)
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
 @app.get("/healthz")
 async def healthz():
     return {"status": "ok"}
@@ -730,7 +748,7 @@ class ImportData(BaseModel):
 
 
 @app.post("/api/import")
-async def import_data(data: ImportData):
+async def import_data(data: ImportData, _: None = Depends(require_backup_token)):
     """Import historical data from another backend instance."""
     imported_devices = 0
     imported_readings = 0
@@ -774,7 +792,7 @@ async def import_data(data: ImportData):
 
 
 @app.get("/api/backup")
-async def backup_database():
+async def backup_database(_: None = Depends(require_backup_token)):
     """Download the SQLite database file for backup purposes."""
     if not os.path.exists(DB_PATH):
         raise HTTPException(status_code=404, detail="Database file not found")

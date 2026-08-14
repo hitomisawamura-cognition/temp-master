@@ -350,6 +350,39 @@ class TestGetStatusEndpoint:
 
 
 class TestImportDataEndpoint:
+    @pytest.mark.parametrize("path", ["/api/import", "/api/backup"])
+    def test_protected_endpoints_require_authentication(self, client, path):
+        with patch.object(main_module, "BACKUP_TOKEN", "test-backup-token"):
+            response = client.get(path) if path.endswith("backup") else client.post(path, json={"devices": []})
+
+        assert response.status_code == 401
+        assert response.json()["detail"] == "Authentication required"
+        assert "test-backup-token" not in response.text
+
+    @pytest.mark.parametrize("path", ["/api/import", "/api/backup"])
+    def test_protected_endpoints_unavailable_without_configured_token(self, client, path):
+        with patch.object(main_module, "BACKUP_TOKEN", ""):
+            response = client.get(path) if path.endswith("backup") else client.post(path, json={"devices": []})
+
+        assert response.status_code == 401
+
+    def test_backup_download_with_valid_token(self, client, tmp_path):
+        original_db_path = main_module.DB_PATH
+        backup_path = tmp_path / "backup.db"
+        backup_path.write_bytes(b"SQLite database")
+        main_module.DB_PATH = str(backup_path)
+
+        try:
+            response = client.get(
+                "/api/backup",
+                headers={"Authorization": "Bearer test-backup-token"},
+            )
+        finally:
+            main_module.DB_PATH = original_db_path
+
+        assert response.status_code == 200
+        assert response.content == b"SQLite database"
+
     async def test_import_data_creates_devices(self, client, reset_data_store, temp_db_path):
         original_db_path = main_module.DB_PATH
         main_module.DB_PATH = temp_db_path
@@ -372,7 +405,11 @@ class TestImportDataEndpoint:
                 ]
             }
             
-            response = client.post("/api/import", json=import_data)
+            response = client.post(
+                "/api/import",
+                json=import_data,
+                headers={"Authorization": "Bearer test-backup-token"},
+            )
             
             assert response.status_code == 200
             data = response.json()
@@ -416,7 +453,11 @@ class TestImportDataEndpoint:
                 ]
             }
             
-            response = client.post("/api/import", json=import_data)
+            response = client.post(
+                "/api/import",
+                json=import_data,
+                headers={"Authorization": "Bearer test-backup-token"},
+            )
             
             assert response.status_code == 200
             data = response.json()
@@ -449,7 +490,11 @@ class TestImportDataEndpoint:
                 ]
             }
             
-            response = client.post("/api/import", json=import_data)
+            response = client.post(
+                "/api/import",
+                json=import_data,
+                headers={"Authorization": "Bearer test-backup-token"},
+            )
             
             assert response.status_code == 200
             data = response.json()
@@ -463,7 +508,11 @@ class TestImportDataEndpoint:
     def test_import_data_empty_devices(self, client, reset_data_store):
         import_data = {"devices": []}
         
-        response = client.post("/api/import", json=import_data)
+        response = client.post(
+            "/api/import",
+            json=import_data,
+            headers={"Authorization": "Bearer test-backup-token"},
+        )
         
         assert response.status_code == 200
         data = response.json()
