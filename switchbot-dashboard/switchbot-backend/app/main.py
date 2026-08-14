@@ -15,7 +15,7 @@ import httpx
 from dotenv import load_dotenv
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -28,6 +28,11 @@ DB_PATH = os.getenv("DB_PATH", "/data/app.db" if os.path.exists("/data") else "a
 SWITCHBOT_API_BASE = "https://api.switch-bot.com/v1.1"
 SWITCHBOT_TOKEN = os.getenv("SWITCHBOT_TOKEN", "")
 SWITCHBOT_SECRET = os.getenv("SWITCHBOT_SECRET", "")
+
+# Shared secret protecting the endpoints that read or write the whole database.
+# When unset, those endpoints are disabled instead of being publicly reachable.
+ADMIN_API_KEY = os.getenv("ADMIN_API_KEY", "")
+API_KEY_HEADER = "X-API-Key"
 
 DATA_COLLECTION_INTERVAL = 3600
 RATE_LIMIT_BACKOFF_BASE = 60
@@ -360,6 +365,17 @@ async def cleanup_old_latency_logs():
         await db.commit()
 
 
+def require_admin_api_key(request: Request) -> None:
+    if not ADMIN_API_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail="Endpoint disabled: ADMIN_API_KEY is not configured",
+        )
+    provided = request.headers.get(API_KEY_HEADER, "")
+    if not provided or not hmac.compare_digest(provided, ADMIN_API_KEY):
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
+
+
 def generate_switchbot_headers() -> dict:
     if not SWITCHBOT_TOKEN or not SWITCHBOT_SECRET:
         return {}
@@ -589,7 +605,7 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -729,7 +745,7 @@ class ImportData(BaseModel):
     devices: list[ImportDeviceData]
 
 
-@app.post("/api/import")
+@app.post("/api/import", dependencies=[Depends(require_admin_api_key)])
 async def import_data(data: ImportData):
     """Import historical data from another backend instance."""
     imported_devices = 0
@@ -773,7 +789,7 @@ async def import_data(data: ImportData):
     }
 
 
-@app.get("/api/backup")
+@app.get("/api/backup", dependencies=[Depends(require_admin_api_key)])
 async def backup_database():
     """Download the SQLite database file for backup purposes."""
     if not os.path.exists(DB_PATH):

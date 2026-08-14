@@ -10,6 +10,9 @@ from fastapi.testclient import TestClient
 
 os.environ["SWITCHBOT_TOKEN"] = ""
 os.environ["SWITCHBOT_SECRET"] = ""
+os.environ["ADMIN_API_KEY"] = ""
+
+TEST_ADMIN_API_KEY = "test-admin-key"
 
 from app.main import (
     DB_PATH,
@@ -149,6 +152,17 @@ def sample_switchbot_status_response() -> dict:
 @pytest.fixture
 def client(reset_data_store) -> TestClient:
     return TestClient(app)
+
+
+@pytest.fixture
+def admin_api_key() -> Generator[str, None, None]:
+    with patch("app.main.ADMIN_API_KEY", TEST_ADMIN_API_KEY):
+        yield TEST_ADMIN_API_KEY
+
+
+@pytest.fixture
+def admin_headers(admin_api_key: str) -> dict:
+    return {"X-API-Key": admin_api_key}
 
 
 @pytest.fixture

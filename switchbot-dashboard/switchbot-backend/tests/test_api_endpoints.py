@@ -350,7 +350,7 @@ class TestGetStatusEndpoint:
 
 
 class TestImportDataEndpoint:
-    async def test_import_data_creates_devices(self, client, reset_data_store, temp_db_path):
+    async def test_import_data_creates_devices(self, client, reset_data_store, temp_db_path, admin_headers):
         original_db_path = main_module.DB_PATH
         main_module.DB_PATH = temp_db_path
         
@@ -372,7 +372,7 @@ class TestImportDataEndpoint:
                 ]
             }
             
-            response = client.post("/api/import", json=import_data)
+            response = client.post("/api/import", json=import_data, headers=admin_headers)
             
             assert response.status_code == 200
             data = response.json()
@@ -385,7 +385,7 @@ class TestImportDataEndpoint:
         finally:
             main_module.DB_PATH = original_db_path
 
-    async def test_import_data_creates_readings(self, client, reset_data_store, temp_db_path):
+    async def test_import_data_creates_readings(self, client, reset_data_store, temp_db_path, admin_headers):
         original_db_path = main_module.DB_PATH
         main_module.DB_PATH = temp_db_path
         
@@ -416,7 +416,7 @@ class TestImportDataEndpoint:
                 ]
             }
             
-            response = client.post("/api/import", json=import_data)
+            response = client.post("/api/import", json=import_data, headers=admin_headers)
             
             assert response.status_code == 200
             data = response.json()
@@ -425,7 +425,7 @@ class TestImportDataEndpoint:
         finally:
             main_module.DB_PATH = original_db_path
 
-    async def test_import_data_multiple_devices(self, client, reset_data_store, temp_db_path):
+    async def test_import_data_multiple_devices(self, client, reset_data_store, temp_db_path, admin_headers):
         original_db_path = main_module.DB_PATH
         main_module.DB_PATH = temp_db_path
         
@@ -449,7 +449,7 @@ class TestImportDataEndpoint:
                 ]
             }
             
-            response = client.post("/api/import", json=import_data)
+            response = client.post("/api/import", json=import_data, headers=admin_headers)
             
             assert response.status_code == 200
             data = response.json()
@@ -460,12 +460,72 @@ class TestImportDataEndpoint:
         finally:
             main_module.DB_PATH = original_db_path
 
-    def test_import_data_empty_devices(self, client, reset_data_store):
+    def test_import_data_empty_devices(self, client, reset_data_store, admin_headers):
         import_data = {"devices": []}
         
-        response = client.post("/api/import", json=import_data)
+        response = client.post("/api/import", json=import_data, headers=admin_headers)
         
         assert response.status_code == 200
         data = response.json()
         assert data["imported_devices"] == 0
         assert data["imported_readings"] == 0
+
+
+class TestAdminEndpointAuthentication:
+    def test_import_rejects_missing_api_key(self, client, reset_data_store, admin_api_key):
+        response = client.post("/api/import", json={"devices": []})
+
+        assert response.status_code == 401
+        assert "device-001" not in data_store.devices
+
+    def test_import_rejects_wrong_api_key(self, client, reset_data_store, admin_api_key):
+        import_data = {
+            "devices": [
+                {
+                    "device_id": "device-001",
+                    "device_name": "Attacker Meter",
+                    "device_type": "Meter",
+                    "readings": [],
+                }
+            ]
+        }
+
+        response = client.post(
+            "/api/import", json=import_data, headers={"X-API-Key": "wrong-key"}
+        )
+
+        assert response.status_code == 401
+        assert "device-001" not in data_store.devices
+
+    def test_import_disabled_when_api_key_not_configured(self, client, reset_data_store):
+        with patch.object(main_module, "ADMIN_API_KEY", ""):
+            response = client.post("/api/import", json={"devices": []})
+
+        assert response.status_code == 503
+
+    def test_backup_rejects_missing_api_key(self, client, reset_data_store, admin_api_key):
+        response = client.get("/api/backup")
+
+        assert response.status_code == 401
+        assert "SQLite" not in response.text
+
+    def test_backup_rejects_wrong_api_key(self, client, reset_data_store, admin_api_key):
+        response = client.get("/api/backup", headers={"X-API-Key": "wrong-key"})
+
+        assert response.status_code == 401
+
+    def test_backup_disabled_when_api_key_not_configured(self, client, reset_data_store):
+        with patch.object(main_module, "ADMIN_API_KEY", ""):
+            response = client.get("/api/backup")
+
+        assert response.status_code == 503
+
+    def test_backup_allowed_with_valid_api_key(self, client, reset_data_store, admin_headers):
+        response = client.get("/api/backup", headers=admin_headers)
+
+        assert response.status_code == 200
+        assert response.content.startswith(b"SQLite format 3")
+
+    def test_public_endpoints_do_not_require_api_key(self, client, reset_data_store):
+        assert client.get("/api/meters").status_code == 200
+        assert client.get("/api/status").status_code == 200
