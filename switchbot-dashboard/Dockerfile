@@ -1,3 +1,15 @@
+# フロントエンド（React + Vite）をビルドする
+FROM node:20-slim AS frontend-build
+WORKDIR /frontend
+
+COPY switchbot-frontend/package.json switchbot-frontend/package-lock.json ./
+RUN npm ci
+
+COPY switchbot-frontend/ ./
+# 同一オリジンでバックエンドから配信するため API ベースURLは相対パス（空文字）にする
+ENV VITE_API_URL=""
+RUN npm run build
+
 # Build and run backend (serves frontend static files)
 FROM python:3.12-slim
 WORKDIR /app
@@ -14,8 +26,8 @@ RUN poetry config virtualenvs.create true && \
 # Copy backend application code
 COPY switchbot-backend/app/ ./app/
 
-# Copy frontend to root: served at /
-COPY switchbot-frontend/ ./static/
+# Copy built frontend (dist の中身を static/ 直下へ): served at /
+COPY --from=frontend-build /frontend/dist/ ./static/
 
 EXPOSE 8000
 
