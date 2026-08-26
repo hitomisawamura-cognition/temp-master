@@ -39,7 +39,6 @@ const chartColors = {
 
 export function MeterCard({ meter, history, timeScale, stale, theme }: MeterCardProps) {
   const colors = chartColors[theme];
-  const chartData = history;
   const parsedLastUpdated = meter.last_updated ? new Date(meter.last_updated) : null;
 
   return (
@@ -68,13 +67,13 @@ export function MeterCard({ meter, history, timeScale, stale, theme }: MeterCard
         ) : (
           <div className="meter-chart-wrap">
             <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+              <LineChart data={history} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                 <CartesianGrid stroke={colors.grid} />
                 <XAxis
                   dataKey="timestamp"
                   tickFormatter={(value: string) => formatTimestamp(value, timeScale)}
                   tick={{ fill: colors.axis, fontSize: 10 }}
-                  interval={Math.max(0, Math.ceil(chartData.length / 8) - 1)}
+                  interval={Math.max(0, Math.ceil(history.length / 8) - 1)}
                 />
                 <YAxis
                   tick={{ fill: colors.axis, fontSize: 10 }}
