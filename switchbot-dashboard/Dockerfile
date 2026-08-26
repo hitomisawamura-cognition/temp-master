@@ -1,3 +1,11 @@
+FROM node:20-slim AS frontend-build
+WORKDIR /app/switchbot-frontend
+
+COPY switchbot-frontend/package.json switchbot-frontend/package-lock.json ./
+RUN npm ci
+COPY switchbot-frontend/ ./
+RUN npm run build
+
 # Build and run backend (serves frontend static files)
 FROM python:3.12-slim
 WORKDIR /app
@@ -14,8 +22,8 @@ RUN poetry config virtualenvs.create true && \
 # Copy backend application code
 COPY switchbot-backend/app/ ./app/
 
-# Copy frontend to root: served at /
-COPY switchbot-frontend/ ./static/
+# Copy the built frontend to the static directory served at /
+COPY --from=frontend-build /app/switchbot-frontend/dist/ ./static/
 
 EXPOSE 8000
 
