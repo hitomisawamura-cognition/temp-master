@@ -56,12 +56,20 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
    cp .env.example .env
    ```
 
+   `VITE_API_URL` controls where the frontend sends API requests. Leave it
+   empty to use the same origin as the frontend, or set it to a backend URL
+   (for example, `http://localhost:8000`) when developing against a remote
+   or separately running backend.
+
 4. Start the development server:
    ```bash
    npm run dev
    ```
 
 5. Open http://localhost:5173 in your browser
+
+The dark mode toggle detects the operating system color preference on first
+load and persists manual theme changes in `localStorage`.
 
 ## API Endpoints
 
