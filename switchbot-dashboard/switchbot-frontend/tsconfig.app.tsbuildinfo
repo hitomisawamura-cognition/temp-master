@@ -1,1 +1,0 @@
-{"root":["./src/App.tsx","./src/main.tsx","./src/api/client.ts","./src/components/MeterCard.tsx","./src/components/MeterChart.tsx","./src/components/StaleMetersSection.tsx","./src/components/ThemeToggle.tsx","./src/context/ThemeContext.tsx","./src/utils/meters.ts"],"version":"5.9.3"}
