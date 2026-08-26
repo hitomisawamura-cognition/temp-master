@@ -29,6 +29,7 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -40,6 +41,7 @@ export function App() {
       setConnected(true);
       setError(null);
       setLoading(false);
+      setLastRefresh(new Date());
 
       const activeMeters = nextMeters.filter((meter) => !isStaleMeter(meter));
       const historyEntries = await Promise.all(
@@ -96,14 +98,14 @@ export function App() {
           onRefresh={() => void handleRefresh()}
           onBackup={handleBackup}
         />
-        <StatusBar status={status} />
+        <StatusBar status={status} lastRefresh={lastRefresh} />
         {loading && <div className="loading">Loading temperature data...</div>}
         {error && (
           <div className="alert alert-danger">
             <strong>Error.</strong> {error}
           </div>
         )}
-        {!loading && !error && (
+        {!loading && (
           <>
             <MeterGrid meters={meters} histories={histories} timeScale={timeScale} theme={theme} />
             <StaleMetersSection

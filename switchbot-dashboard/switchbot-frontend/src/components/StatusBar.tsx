@@ -3,16 +3,18 @@ import { pad2 } from '../lib/format';
 
 interface StatusBarProps {
   status: Status | null;
+  lastRefresh: Date | null;
 }
 
-export function StatusBar({ status }: StatusBarProps) {
+export function StatusBar({ status, lastRefresh }: StatusBarProps) {
   if (!status) {
     return null;
   }
 
   const count = status.meters_count || 0;
-  const now = new Date();
-  const refreshTime = `${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`;
+  const refreshTime = lastRefresh
+    ? `${pad2(lastRefresh.getHours())}:${pad2(lastRefresh.getMinutes())}:${pad2(lastRefresh.getSeconds())}`
+    : '';
 
   return (
     <>

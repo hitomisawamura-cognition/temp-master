@@ -39,10 +39,7 @@ const chartColors = {
 
 export function MeterCard({ meter, history, timeScale, stale, theme }: MeterCardProps) {
   const colors = chartColors[theme];
-  const chartData = history.map((reading) => ({
-    ...reading,
-    chartLabel: formatTimestamp(reading.timestamp, timeScale),
-  }));
+  const chartData = history;
   const parsedLastUpdated = meter.last_updated ? new Date(meter.last_updated) : null;
 
   return (
@@ -56,13 +53,13 @@ export function MeterCard({ meter, history, timeScale, stale, theme }: MeterCard
       </div>
       <div className="panel-body">
         <div className="meter-stats">
-          {meter.current_temperature !== null && (
+          {meter.current_temperature != null && (
             <span className="badge badge-temperature">{meter.current_temperature}°C</span>
           )}
-          {meter.current_humidity !== null && (
+          {meter.current_humidity != null && (
             <span className="badge badge-humidity">{meter.current_humidity}%</span>
           )}
-          {meter.battery !== null && (
+          {meter.battery != null && (
             <span className="badge badge-battery">{meter.battery}%</span>
           )}
         </div>
