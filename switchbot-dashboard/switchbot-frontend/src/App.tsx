@@ -21,7 +21,12 @@ export default function App() {
   const staleMeters = meters.filter((meter) => isStaleMeter(meter))
 
   const connected = !metersQuery.isError && !statusQuery.isError
-  const errorMessage = metersQuery.error?.message ?? statusQuery.error?.message ?? null
+  const fetchError = metersQuery.error ?? statusQuery.error
+  const errorMessage = refreshMutation.error
+    ? `Failed to refresh: ${refreshMutation.error.message}`
+    : fetchError
+      ? `Failed to fetch data: ${fetchError.message}`
+      : null
   const lastRefresh = statusQuery.dataUpdatedAt ? new Date(statusQuery.dataUpdatedAt) : null
 
   return (
@@ -41,8 +46,7 @@ export default function App() {
 
         {errorMessage && (
           <div className="rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
-            <strong className="font-semibold">Error.</strong>{' '}
-            {`Failed to fetch data: ${errorMessage}`}
+            <strong className="font-semibold">Error.</strong> {errorMessage}
           </div>
         )}
 
