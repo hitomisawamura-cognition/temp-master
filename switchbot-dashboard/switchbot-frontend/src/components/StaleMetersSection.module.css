@@ -1,0 +1,30 @@
+.section {
+  margin-bottom: 20px;
+}
+
+.header {
+  margin-bottom: 10px;
+}
+
+.title {
+  color: #8a6d3b;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.subtitle {
+  color: #8a6d3b;
+  font-size: 12px;
+  margin: 4px 0 0;
+}
+
+.panel {
+  composes: panel from '../styles/shared.module.css';
+  background-color: #fcf8e3;
+  border-color: #f0ad4e;
+}
+
+.panelBody {
+  composes: panelBody from '../styles/shared.module.css';
+}

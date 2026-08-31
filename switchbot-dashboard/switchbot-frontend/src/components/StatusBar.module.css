@@ -1,0 +1,13 @@
+.statusBar {
+  composes: alert alertInfo from '../styles/shared.module.css';
+  display: flex;
+  justify-content: space-between;
+}
+
+.rateLimit {
+  composes: alert alertWarning from '../styles/shared.module.css';
+}
+
+.error {
+  composes: alert alertDanger from '../styles/shared.module.css';
+}
