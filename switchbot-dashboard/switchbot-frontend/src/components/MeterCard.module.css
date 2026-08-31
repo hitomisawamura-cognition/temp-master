@@ -1,0 +1,75 @@
+.panel {
+  composes: panel from '../styles/shared.module.css';
+}
+
+.heading {
+  composes: panelHeading from '../styles/shared.module.css';
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.title {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.body {
+  composes: panelBody from '../styles/shared.module.css';
+}
+
+.stats {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.stats .stat {
+  font-size: 14px;
+  padding: 4px 8px;
+}
+
+.stat {
+  composes: label from '../styles/shared.module.css';
+}
+
+.statTemperature {
+  composes: stat;
+  composes: labelDanger from '../styles/shared.module.css';
+}
+
+.statHumidity {
+  composes: stat;
+  composes: labelInfo from '../styles/shared.module.css';
+}
+
+.statBattery {
+  composes: stat;
+  composes: labelSuccess from '../styles/shared.module.css';
+}
+
+.deviceTypeTag {
+  background-color: #eee;
+  border-radius: 10px;
+  color: #777;
+  font-size: 11px;
+  padding: 2px 8px;
+}
+
+.lastUpdated {
+  color: #777;
+  font-size: 12px;
+  margin: 8px 0 0;
+}
+
+.staleBadge {
+  composes: label labelWarning from '../styles/shared.module.css';
+  display: inline-block;
+  margin-left: 8px;
+}
+
+.staleEmpty {
+  color: #8a6d3b;
+  margin: 0;
+}
