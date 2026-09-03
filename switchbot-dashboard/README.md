@@ -51,7 +51,7 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
    npm install
    ```
 
-3. Copy `.env.example` to `.env`:
+3. Copy `.env.example` to `.env` and adjust `VITE_API_URL` (backend base URL, defaults to `https://snakeroom.fly.dev`):
    ```bash
    cp .env.example .env
    ```
@@ -63,12 +63,22 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
 
 5. Open http://localhost:5173 in your browser
 
+6. Build the production bundle (output in `dist/`, served by the backend from `static/` in Docker):
+   ```bash
+   npm run build
+   ```
+
+The frontend is a React 18 + TypeScript + Vite SPA styled with Tailwind CSS (`darkMode: 'class'`).
+Use the sun/moon toggle in the navbar to switch between light and dark themes; the choice is
+persisted in `localStorage` and defaults to the OS `prefers-color-scheme` setting.
+
 ## API Endpoints
 
 - `GET /api/meters` - Returns list of all meter devices with current temperature (from cache)
 - `GET /api/meters/{device_id}/history` - Returns temperature history with time_scale parameter
 - `POST /api/meters/refresh` - Triggers immediate data collection
 - `GET /api/status` - Returns backend status and configuration
+- `GET /api/backup` - Downloads the SQLite database file
 
 ## Notes
 
