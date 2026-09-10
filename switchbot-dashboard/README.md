@@ -4,7 +4,7 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
 
 ## Features
 
-- Temperature charts for all SwitchBot Meter devices using Recharts
+- Temperature charts for all SwitchBot Meter devices using Chart.js
 - Time scale switching (hour/day/month/year)
 - Auto-refresh every 30 seconds (frontend) with background data collection every 2 minutes (backend)
 - Rate limiting protection with exponential backoff
@@ -48,12 +48,12 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
 
 2. Install dependencies:
    ```bash
-   npm install
+   npm ci
    ```
 
-3. Copy `.env.example` to `.env`:
+3. (Optional) Set the backend URL in `.env`:
    ```bash
-   cp .env.example .env
+   echo "VITE_API_URL=http://localhost:8000" > .env
    ```
 
 4. Start the development server:
