@@ -67,7 +67,7 @@ export function MeterChart({ history, timeScale }: MeterChartProps) {
             ticks: {
               font: { size: 10 },
               color: '#777',
-              callback: (value) => `${value}°`,
+              callback: (value) => `${typeof value === 'number' ? Number(value.toFixed(2)) : value}°`,
             },
           },
         },
