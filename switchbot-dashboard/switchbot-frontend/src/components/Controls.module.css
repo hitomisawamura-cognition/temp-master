@@ -1,0 +1,13 @@
+.row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 10px;
+}

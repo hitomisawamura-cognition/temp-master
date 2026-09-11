@@ -5,7 +5,9 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
 ## Features
 
 - Temperature charts for all SwitchBot Meter devices using Recharts
-- Time scale switching (hour/day/month/year)
+- Time scale switching (hour/day/week/month/year)
+- Multiple UI themes (Light / Dark / Ocean / Solarized) with `prefers-color-scheme` detection and `localStorage` persistence
+- Stale meters (no update for 7+ days) are grouped in a separate section
 - Auto-refresh every 30 seconds (frontend) with background data collection every 2 minutes (backend)
 - Rate limiting protection with exponential backoff
 - All API calls are cached - GET endpoints never call SwitchBot API directly
@@ -51,10 +53,14 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
    npm install
    ```
 
-3. Copy `.env.example` to `.env`:
+3. Copy `.env.example` to `.env` and adjust `VITE_API_URL` if needed:
    ```bash
    cp .env.example .env
    ```
+
+   | Variable       | Default                      | Description                                           |
+   | -------------- | ---------------------------- | ----------------------------------------------------- |
+   | `VITE_API_URL` | `https://snakeroom.fly.dev`  | Base URL of the backend API. Use `http://localhost:8000` for a local backend, or leave empty for same-origin. |
 
 4. Start the development server:
    ```bash
@@ -62,6 +68,27 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
    ```
 
 5. Open http://localhost:5173 in your browser
+
+Other scripts:
+
+```bash
+npm run build      # type-check + production build to dist/
+npm run lint       # ESLint + Prettier check
+npm run typecheck  # TypeScript only
+npm run format     # Prettier write
+```
+
+#### Tech stack
+
+React 19 + Vite + TypeScript, TanStack Query for data fetching / 30s polling, Recharts for charts, CSS Modules with CSS custom properties for theming.
+
+#### Themes
+
+Use the **Theme** selector in the navbar to switch between Light, Dark, Ocean and Solarized. The choice is stored in `localStorage` (`temp-master-theme`); on first visit the OS `prefers-color-scheme` is respected. Themes are defined as CSS variables in `src/index.css` (`--bg`, `--panel-bg`, `--text`, `--accent`, `--chart-line`, ...) and the Recharts colors follow them.
+
+### Docker
+
+The `Dockerfile` is a multi-stage build: a Node stage runs `npm ci && npm run build` for the frontend, then the Python stage copies `dist/` into `./static/`, which FastAPI serves at `/` with an SPA fallback to `index.html`. The frontend bundle is built with `VITE_API_URL=https://snakeroom.fly.dev` by default; override with `--build-arg VITE_API_URL=...` (an empty value makes API calls same-origin).
 
 ## API Endpoints
 
