@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
-import { getInitialTheme, THEME_STORAGE_KEY, type ThemeId } from './themes'
+import { getInitialTheme, persistTheme, type ThemeId } from './themes'
 
 interface ThemeContextValue {
   theme: ThemeId
@@ -17,7 +17,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeId>(() => applyTheme(getInitialTheme()))
 
   const setTheme = useCallback((next: ThemeId) => {
-    localStorage.setItem(THEME_STORAGE_KEY, next)
+    persistTheme(next)
     setThemeState(applyTheme(next))
   }, [])
 
