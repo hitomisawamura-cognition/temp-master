@@ -18,6 +18,32 @@ description: Test the Temp Master SwitchBot dashboard locally. Use when verifyin
 
 ## Local Development Setup
 
+### Frontend-only testing against the public backend
+
+For UI-only changes, no local Python backend or SwitchBot secrets are needed:
+
+```bash
+cd switchbot-dashboard/switchbot-frontend
+VITE_API_URL=https://snakeroom.fly.dev npm run dev
+```
+
+Open `http://localhost:5173`. Use live meter counts rather than hard-coding them in
+reusable tests. The backup endpoint may require authentication even when meter
+reads are public: distinguish opening the correct `/api/backup` tab from actually
+downloading a database. Do not report a completed download if the tab says
+`Not authenticated`.
+
+For the disconnected state, start a separate Vite instance with
+`VITE_API_URL=http://localhost:9 npm run dev -- --port 5174` and open port 5174.
+Expect `Disconnected` and `Failed to fetch meters: Failed to fetch`.
+
+For narrow-screen tests, check control bounding boxes as well as document
+`scrollWidth`: a fixed navbar can clip controls without increasing page width.
+For a blocked-storage test, inject throwing `Storage.prototype.getItem` and
+`setItem` methods before application startup, then verify both methods really
+throw before judging the theme fallback. If using raw CDP, enable the Page domain
+before `Page.addScriptToEvaluateOnNewDocument` and keep that CDP session attached.
+
 ### 1. Install dependencies
 
 ```bash

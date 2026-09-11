@@ -1,13 +1,13 @@
 .navbar {
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
   z-index: 100;
   min-height: 50px;
+  margin-bottom: 20px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 16px;
+  gap: 0 16px;
   padding: 0 15px;
   background-color: var(--navbar-bg);
   border-bottom: 1px solid var(--navbar-border);
@@ -40,8 +40,11 @@
 .right {
   margin-left: auto;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
+  padding: 8px 0;
+  min-width: 0;
 }
 
 .themeLabel {

@@ -141,7 +141,6 @@ body {
   line-height: 1.43;
   background-color: var(--bg);
   color: var(--text);
-  padding-top: 70px;
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
