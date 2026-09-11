@@ -1,0 +1,115 @@
+.panel {
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+
+.panelHeading {
+  padding: 10px 15px;
+  background-color: var(--panel-header-bg);
+  border-bottom: 1px solid var(--border);
+  border-radius: 3px 3px 0 0;
+}
+
+.panelBody {
+  padding: 15px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.badgeSuccess {
+  background-color: var(--success);
+}
+.badgeDanger {
+  background-color: var(--danger);
+}
+.badgeInfo {
+  background-color: var(--info);
+}
+.badgeWarning {
+  background-color: var(--warning);
+}
+
+.btn {
+  display: inline-block;
+  padding: 6px 12px;
+  font-size: 14px;
+  line-height: 1.43;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-color: var(--panel-bg);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+.btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.btnPrimary {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.select {
+  padding: 6px 12px;
+  font-size: 14px;
+  line-height: 1.43;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-color: var(--panel-bg);
+  color: var(--text);
+}
+
+.alert {
+  padding: 15px;
+  margin-bottom: 20px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.alertInfo {
+  background-color: var(--info-bg);
+  border-color: var(--info);
+  color: var(--info-text);
+}
+
+.alertWarning {
+  background-color: var(--warning-bg);
+  border-color: var(--warning);
+  color: var(--warning-text);
+}
+
+.alertDanger {
+  background-color: var(--danger-bg);
+  border-color: var(--danger);
+  color: var(--danger-text);
+}
+
+.muted {
+  color: var(--text-muted);
+}
