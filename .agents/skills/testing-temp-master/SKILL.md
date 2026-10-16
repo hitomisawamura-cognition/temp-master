@@ -43,6 +43,25 @@ ln -s $(pwd)/switchbot-dashboard/switchbot-frontend switchbot-dashboard/switchbo
 
 **Important:** The static directory check in `main.py` happens at module import time (`STATIC_DIR = Path(__file__).resolve().parent.parent / "static"`). If you create the symlink after starting the server, you must restart the server.
 
+### 3b. If SwitchBot credentials are unavailable (no secrets in the session)
+
+`list_secrets` may report no secrets and `.env` may not exist. The dashboard is still fully testable:
+
+1. Write **dummy** values to `.env` (`SWITCHBOT_TOKEN=dummy...`, `SWITCHBOT_SECRET=dummy...`). This makes
+   `/api/status` return `configured: true` and makes `POST /api/meters/refresh` return 200 — `collect_data()`
+   swallows the upstream auth failure (`main.py`, `except HTTPException: pass`), so seeded data is preserved.
+   Without any credentials the refresh endpoint returns HTTP 500 and the button cannot be tested.
+2. Seed devices/readings through `POST /api/import` (schema: `{"devices":[{device_id, device_name, device_type,
+   current_temperature, current_humidity, battery, last_updated, readings:[{timestamp, temperature, humidity, battery}]}]}`).
+   Timestamps must be ISO-8601 UTC. To exercise every Time Range option, seed readings at 10-min, 30-min, 3-h,
+   daily and weekly spacing in one list. To exercise the stale section, add one device with `last_updated`
+   ~10 days old and one with `last_updated` omitted entirely (renders 「値がありません（データ未受信）」).
+3. Device names must match a key in `src/lib/constants.ts` `DISPLAY_NAMES` (e.g. `Bedroom Meter`, `Living Meter`,
+   `外`, `ネズミ`, `夢`) if you want the Japanese plant-equipment display names to appear.
+
+Caveat: with dummy credentials the Refresh button proves the POST + TanStack Query invalidation path only, not
+that fresh values arrive from the SwitchBot cloud.
+
 ### 4. Start the server
 
 ```bash
