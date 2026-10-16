@@ -1,0 +1,54 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.staleBadge {
+  display: inline-block;
+  margin-left: 8px;
+}
+
+.deviceTypeTag {
+  font-size: 11px;
+  color: #777;
+  background-color: #eee;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.stats {
+  margin-bottom: 10px;
+}
+
+.stats > span {
+  display: inline-block;
+  font-size: 14px;
+  margin-right: 6px;
+  padding: 4px 8px;
+}
+
+.chartWrap {
+  position: relative;
+  height: 200px;
+}
+
+.lastUpdated {
+  color: #777;
+  font-size: 12px;
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
+.staleEmpty {
+  color: #8a6d3b;
+  margin: 0;
+}
