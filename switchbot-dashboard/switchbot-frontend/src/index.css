@@ -1,0 +1,122 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *, [data-theme='control-room'], [data-theme='control-room'] *));
+
+:root,
+[data-theme='light'] {
+  --bg: #f1f5f9;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --muted: #64748b;
+  --accent: #2563eb;
+  --accent-contrast: #ffffff;
+  --temp: #dc2626;
+  --temp-fill: rgb(220 38 38 / 0.15);
+  --humidity: #0284c7;
+  --battery: #16a34a;
+  --warn: #b45309;
+  --warn-bg: #fef3c7;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --grid: rgb(15 23 42 / 0.08);
+  --font-display: ui-sans-serif, system-ui, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+}
+
+[data-theme='dark'] {
+  --bg: #0b1120;
+  --surface: #111827;
+  --surface-muted: #1f2937;
+  --border: #1f2a3d;
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --accent-contrast: #0b1120;
+  --temp: #f87171;
+  --temp-fill: rgb(248 113 113 / 0.2);
+  --humidity: #38bdf8;
+  --battery: #4ade80;
+  --warn: #fbbf24;
+  --warn-bg: rgb(251 191 36 / 0.1);
+  --danger: #f87171;
+  --success: #4ade80;
+  --grid: rgb(226 232 240 / 0.08);
+}
+
+[data-theme='control-room'] {
+  --bg: #050805;
+  --surface: #0b120b;
+  --surface-muted: #111a11;
+  --border: #1f3a1f;
+  --text: #d9f99d;
+  --muted: #84a36b;
+  --accent: #f59e0b;
+  --accent-contrast: #050805;
+  --temp: #f59e0b;
+  --temp-fill: rgb(245 158 11 / 0.18);
+  --humidity: #22d3ee;
+  --battery: #84cc16;
+  --warn: #fb923c;
+  --warn-bg: rgb(251 146 60 / 0.1);
+  --danger: #ef4444;
+  --success: #84cc16;
+  --grid: rgb(132 204 22 / 0.12);
+  --font-display: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+
+[data-theme='sakura'] {
+  --bg: #fff1f4;
+  --surface: #ffffff;
+  --surface-muted: #fff7f9;
+  --border: #fbcfe8;
+  --text: #4a1d33;
+  --muted: #9d5c7a;
+  --accent: #db2777;
+  --accent-contrast: #ffffff;
+  --temp: #e11d48;
+  --temp-fill: rgb(225 29 72 / 0.12);
+  --humidity: #7c3aed;
+  --battery: #059669;
+  --warn: #c2410c;
+  --warn-bg: #ffedd5;
+  --danger: #be123c;
+  --success: #059669;
+  --grid: rgb(74 29 51 / 0.08);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-fg: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-temp: var(--temp);
+  --color-humidity: var(--humidity);
+  --color-battery: var(--battery);
+  --color-warn: var(--warn);
+  --color-warn-bg: var(--warn-bg);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --font-display: var(--font-display);
+}
+
+html {
+  background-color: var(--bg);
+  color: var(--text);
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  min-height: 100vh;
+}
+
+[data-theme='control-room'] .glow {
+  text-shadow: 0 0 8px rgb(245 158 11 / 0.5);
+}
