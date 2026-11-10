@@ -1,4 +1,20 @@
-# Build and run backend (serves frontend static files)
+# ---- Stage 1: build the React/Vite frontend ----
+FROM node:20-alpine AS frontend
+WORKDIR /frontend
+
+# Empty = same-origin API (served by this FastAPI app). Override per deploy, e.g. in fly.toml [build.args].
+ARG VITE_API_URL=""
+ARG VITE_DISPLAY_NAMES=""
+ENV VITE_API_URL=$VITE_API_URL \
+    VITE_DISPLAY_NAMES=$VITE_DISPLAY_NAMES
+
+COPY switchbot-frontend/package.json switchbot-frontend/package-lock.json ./
+RUN npm ci
+
+COPY switchbot-frontend/ ./
+RUN npm run build
+
+# ---- Stage 2: backend runtime (serves the built frontend) ----
 FROM python:3.12-slim
 WORKDIR /app
 
@@ -14,8 +30,8 @@ RUN poetry config virtualenvs.create true && \
 # Copy backend application code
 COPY switchbot-backend/app/ ./app/
 
-# Copy frontend to root: served at /
-COPY switchbot-frontend/ ./static/
+# Vite dist/ output served at /
+COPY --from=frontend /frontend/dist/ ./static/
 
 EXPOSE 8000
 

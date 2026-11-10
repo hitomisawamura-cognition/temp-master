@@ -789,17 +789,45 @@ async def backup_database():
     )
 
 
-# Serve frontend static files if the static directory exists.
-# Layout under static/:
-#   index.html              -> frontend served at "/"
-STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
-if STATIC_DIR.is_dir():
-    @app.get("/{full_path:path}")
+# Serve the built frontend (Vite `dist/` output: index.html + hashed assets/).
+# Lookup order: $STATIC_DIR, ./static (Docker image), ../switchbot-frontend/dist (local build).
+BACKEND_ROOT = Path(__file__).resolve().parent.parent
+ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable"
+INDEX_CACHE_CONTROL = "no-cache"
+
+
+def resolve_static_dir() -> Optional[Path]:
+    candidates = [
+        os.getenv("STATIC_DIR"),
+        BACKEND_ROOT / "static",
+        BACKEND_ROOT.parent / "switchbot-frontend" / "dist",
+    ]
+    for candidate in candidates:
+        if candidate and (Path(candidate) / "index.html").is_file():
+            return Path(candidate).resolve()
+    return None
+
+
+def register_spa_routes(target: FastAPI, static_dir: Path) -> None:
+    static_dir = static_dir.resolve()
+    assets_dir = static_dir / "assets"
+
+    @target.get("/{full_path:path}", include_in_schema=False)
     async def serve_spa(request: Request, full_path: str):
-        """Serve the frontend at root."""
-        file_path = (STATIC_DIR / full_path).resolve()
-        if not file_path.is_relative_to(STATIC_DIR.resolve()):
-            return FileResponse(STATIC_DIR / "index.html")
+        """Serve the SPA at root; unknown non-API paths fall back to index.html."""
+        if full_path == "api" or full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not Found")
+        index = FileResponse(static_dir / "index.html", headers={"Cache-Control": INDEX_CACHE_CONTROL})
+        file_path = (static_dir / full_path).resolve()
+        if not file_path.is_relative_to(static_dir):
+            return index
         if full_path and file_path.is_file():
+            if file_path.is_relative_to(assets_dir):
+                return FileResponse(file_path, headers={"Cache-Control": ASSET_CACHE_CONTROL})
             return FileResponse(file_path)
-        return FileResponse(STATIC_DIR / "index.html")
+        return index
+
+
+STATIC_DIR = resolve_static_dir()
+if STATIC_DIR is not None:
+    register_spa_routes(app, STATIC_DIR)

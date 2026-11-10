@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Theme tokens are HSL triplets ("H S% L%") so Tailwind can apply alpha
+ * (e.g. bg-warning/10). Switch themes with <html data-theme="...">.
+ */
+@layer base {
+  :root,
+  [data-theme='light'] {
+    --background: 210 20% 97%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --muted: 210 25% 94%;
+    --muted-foreground: 215 16% 42%;
+    --accent: 199 89% 48%;
+    --accent-foreground: 0 0% 100%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --border: 214 24% 88%;
+    --input: 214 24% 84%;
+    --ring: 221 83% 53%;
+    --success: 142 64% 38%;
+    --success-foreground: 0 0% 100%;
+    --warning: 35 92% 45%;
+    --warning-foreground: 0 0% 100%;
+    --danger: 0 72% 51%;
+    --danger-foreground: 0 0% 100%;
+    --info: 199 89% 42%;
+    --info-foreground: 0 0% 100%;
+    --chart-temperature: 0 72% 55%;
+    --chart-humidity: 199 89% 48%;
+    --chart-grid: 214 24% 90%;
+    --radius: 0.625rem;
+  }
+
+  [data-theme='dark'] {
+    --background: 224 30% 8%;
+    --foreground: 210 40% 96%;
+    --card: 222 28% 13%;
+    --card-foreground: 210 40% 96%;
+    --muted: 223 24% 19%;
+    --muted-foreground: 215 20% 68%;
+    --accent: 263 90% 70%;
+    --accent-foreground: 224 30% 8%;
+    --primary: 263 85% 66%;
+    --primary-foreground: 0 0% 100%;
+    --border: 223 22% 22%;
+    --input: 223 22% 28%;
+    --ring: 263 85% 66%;
+    --success: 152 60% 42%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 224 30% 8%;
+    --danger: 350 85% 62%;
+    --danger-foreground: 0 0% 100%;
+    --info: 190 85% 50%;
+    --info-foreground: 224 30% 8%;
+    --chart-temperature: 350 90% 66%;
+    --chart-humidity: 190 90% 55%;
+    --chart-grid: 223 22% 22%;
+  }
+
+  [data-theme='contrast'] {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 100%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 88%;
+    --accent: 55 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --primary: 55 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --border: 0 0% 100%;
+    --input: 0 0% 100%;
+    --ring: 55 100% 50%;
+    --success: 120 100% 40%;
+    --success-foreground: 0 0% 0%;
+    --warning: 40 100% 50%;
+    --warning-foreground: 0 0% 0%;
+    --danger: 0 100% 60%;
+    --danger-foreground: 0 0% 0%;
+    --info: 185 100% 50%;
+    --info-foreground: 0 0% 0%;
+    --chart-temperature: 25 100% 55%;
+    --chart-humidity: 185 100% 50%;
+    --chart-grid: 0 0% 30%;
+    --radius: 0.25rem;
+  }
+
+  [data-theme='contrast'] .border {
+    border-width: 2px;
+  }
+
+  [data-theme='contrast'] .border-b {
+    border-bottom-width: 2px;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: system-ui, -apple-system, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  }
+}
