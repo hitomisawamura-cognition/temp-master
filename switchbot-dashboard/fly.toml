@@ -2,6 +2,9 @@ app = "temp-master"
 primary_region = "nrt"
 
 [build]
+  # The data collector currently runs on snakeroom; set to "" to use this app's own API (same origin).
+  [build.args]
+    VITE_API_URL = "https://snakeroom.fly.dev"
 
 [env]
   PORT = "8000"

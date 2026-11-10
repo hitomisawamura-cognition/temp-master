@@ -4,8 +4,9 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
 
 ## Features
 
-- Temperature charts for all SwitchBot Meter devices using Recharts
-- Time scale switching (hour/day/month/year)
+- Temperature / humidity charts for all SwitchBot Meter devices (React 18 + Vite + TypeScript, Chart.js 4 via react-chartjs-2)
+- Light / Dark / High-contrast themes (persisted in localStorage, defaults to `prefers-color-scheme`)
+- Time scale switching (hour/day/week/month/year)
 - Auto-refresh every 30 seconds (frontend) with background data collection every 2 minutes (backend)
 - Rate limiting protection with exponential backoff
 - All API calls are cached - GET endpoints never call SwitchBot API directly
@@ -48,20 +49,28 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
 
 2. Install dependencies:
    ```bash
-   npm install
+   npm ci
    ```
 
-3. Copy `.env.example` to `.env`:
-   ```bash
-   cp .env.example .env
-   ```
+3. (Optional) Copy `.env.example` to `.env` and adjust:
+   - `VITE_API_URL`: backend base URL. Empty (default) = same origin; the dev server proxies `/api` to `VITE_DEV_PROXY_TARGET` (default `http://localhost:8000`).
+   - `VITE_DISPLAY_NAMES`: JSON object merged over the default device display names (`src/config/displayNames.ts`).
+   - `VITE_DISPLAY_NAMES_URL`: JSON file (same shape) loaded at runtime and merged on top.
 
 4. Start the development server:
    ```bash
    npm run dev
+   # or against the public backend:
+   VITE_API_URL=https://snakeroom.fly.dev npm run dev
    ```
 
 5. Open http://localhost:5173 in your browser
+
+Other scripts: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` (outputs `dist/`).
+
+The FastAPI backend serves the built `dist/` at `/` (lookup: `$STATIC_DIR`, `switchbot-backend/static/`, then `switchbot-frontend/dist/`). The Docker image builds the frontend in a `node:20-alpine` stage; set the API origin with the `VITE_API_URL` build arg (see `fly.toml`).
+
+The previous jQuery/Bootstrap 3 implementation is kept for reference in `switchbot-frontend/legacy/index.html`.
 
 ## API Endpoints
 
@@ -69,6 +78,7 @@ A fullstack web dashboard to monitor temperature readings from SwitchBot Meter d
 - `GET /api/meters/{device_id}/history` - Returns temperature history with time_scale parameter
 - `POST /api/meters/refresh` - Triggers immediate data collection
 - `GET /api/status` - Returns backend status and configuration
+- `GET /api/backup` - Downloads the SQLite database
 
 ## Notes
 
