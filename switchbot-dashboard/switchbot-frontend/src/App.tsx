@@ -21,11 +21,14 @@ export default function App() {
     : status.isError
       ? `Failed to fetch status: ${errorMessage(status.error)}`
       : null;
-  const error = fetchError ?? (refresh.isError ? `Failed to refresh: ${errorMessage(refresh.error)}` : null);
   const hasData = meters.isSuccess && status.isSuccess;
   const connected = hasData && !fetchError;
   const loading = (meters.isPending || status.isPending) && !fetchError;
   const lastRefresh = hasData ? new Date(Math.max(meters.dataUpdatedAt, status.dataUpdatedAt)) : null;
+  // Like the legacy dashboard, a successful data load after a failed refresh clears the error.
+  const refreshFailedSinceLastLoad =
+    refresh.isError && (!hasData || Math.min(meters.dataUpdatedAt, status.dataUpdatedAt) < refresh.submittedAt);
+  const error = fetchError ?? (refreshFailedSinceLastLoad ? `Failed to refresh: ${errorMessage(refresh.error)}` : null);
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors">

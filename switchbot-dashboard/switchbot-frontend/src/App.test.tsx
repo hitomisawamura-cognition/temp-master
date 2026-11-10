@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
@@ -81,6 +81,54 @@ describe('App', () => {
     renderApp();
 
     await waitFor(() => expect(screen.getByTestId('error')).toHaveTextContent('Failed to fetch meters: boom'));
+    expect(screen.getByTestId('connection-status')).toHaveTextContent('Disconnected');
+  });
+
+  it('clears a refresh error once meters and status reload successfully', async () => {
+    let metersCalls = 0;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith('/api/meters/refresh') && init?.method === 'POST') {
+        return jsonResponse({ detail: 'Internal Server Error' }, { status: 500 });
+      }
+      if (url.endsWith('/api/meters')) {
+        metersCalls += 1;
+        return jsonResponse({ meters, last_updated: null });
+      }
+      if (url.endsWith('/api/status')) return jsonResponse(status);
+      if (url.includes('/history')) return jsonResponse({ device_id: 'A1', time_scale: 'day', history: [] });
+      return jsonResponse({ detail: 'Not Found' }, { status: 404 });
+    });
+
+    renderApp();
+    await screen.findByText('第1蒸留塔 (T-101)');
+    fireEvent.click(screen.getByRole('button', { name: /Refresh Data/ }));
+
+    await waitFor(() => expect(metersCalls).toBeGreaterThanOrEqual(2));
+    await waitFor(() => expect(screen.queryByTestId('error')).not.toBeInTheDocument());
+    expect(screen.getByTestId('connection-status')).toHaveTextContent('Connected');
+  });
+
+  it('keeps showing a refresh error while data has not reloaded since the failure', async () => {
+    let failData = false;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith('/api/meters/refresh') && init?.method === 'POST') {
+        failData = true;
+        return jsonResponse({ detail: 'Internal Server Error' }, { status: 500 });
+      }
+      if (failData) return jsonResponse({ detail: 'down' }, { status: 503 });
+      if (url.endsWith('/api/meters')) return jsonResponse({ meters, last_updated: null });
+      if (url.endsWith('/api/status')) return jsonResponse(status);
+      if (url.includes('/history')) return jsonResponse({ device_id: 'A1', time_scale: 'day', history: [] });
+      return jsonResponse({ detail: 'Not Found' }, { status: 404 });
+    });
+
+    renderApp();
+    await screen.findByText('第1蒸留塔 (T-101)');
+    fireEvent.click(screen.getByRole('button', { name: /Refresh Data/ }));
+
+    await waitFor(() => expect(screen.getByTestId('error')).toHaveTextContent('Failed to fetch meters: down'));
     expect(screen.getByTestId('connection-status')).toHaveTextContent('Disconnected');
   });
 });
