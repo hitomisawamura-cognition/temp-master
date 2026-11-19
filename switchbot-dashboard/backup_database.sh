@@ -12,9 +12,11 @@
 # Configuration:
 #   Set SWITCHBOT_BACKEND_URL environment variable or edit the default below
 #   Set BACKUP_DIR environment variable to change the backup directory
+#   Set BACKUP_API_KEY to the backend's API_KEY
 
 BACKEND_URL="${SWITCHBOT_BACKEND_URL:-https://temp-master.fly.dev}"
 BACKUP_DIR="${BACKUP_DIR:-$HOME/switchbot_backups}"
+BACKUP_API_KEY="${BACKUP_API_KEY:-}"
 DEFAULT_INTERVAL=3600  # 1 hour in seconds
 
 LOOP_MODE=false
@@ -43,6 +45,8 @@ while [[ $# -gt 0 ]]; do
             echo "Environment variables:"
             echo "  SWITCHBOT_BACKEND_URL  Backend URL (default: https://temp-master.fly.dev)"
             echo "  BACKUP_DIR             Backup directory (default: ~/switchbot_backups)"
+            echo "  BACKUP_API_KEY         Required: backend API key (sent as X-API-Key)"
+            echo "  Requires curl and file."
             exit 0
             ;;
         *)
@@ -53,17 +57,33 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-mkdir -p "$BACKUP_DIR"
+if [[ -z "$BACKUP_API_KEY" ]]; then
+    echo "BACKUP_API_KEY must be set" >&2
+    exit 1
+fi
+if ! command -v file >/dev/null; then
+    echo "The file command is required to validate SQLite backups" >&2
+    exit 1
+fi
+mkdir -p "$BACKUP_DIR" || exit 1
 
 backup_database() {
-    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local timestamp
+    timestamp=$(date +%Y%m%d_%H%M%S)
     local backup_file="$BACKUP_DIR/switchbot_backup_${timestamp}.db"
+    local download_file http_code
+    download_file=$(mktemp "$BACKUP_DIR/.switchbot_backup_XXXXXX") || return 1
     
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting backup..."
     
-    local http_code=$(curl -s -w "%{http_code}" -o "$backup_file" "$BACKEND_URL/api/backup")
-    
-    if [ "$http_code" -eq 200 ]; then
+    if ! http_code=$(curl -sS -w "%{http_code}" -o "$download_file" \
+        -H "X-API-Key: $BACKUP_API_KEY" "$BACKEND_URL/api/backup"); then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup download failed" >&2
+    elif [[ "$http_code" != 200 ]]; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup failed with HTTP status: $http_code" >&2
+    elif [[ ! -s "$download_file" || "$(LC_ALL=C file -b "$download_file")" != "SQLite 3.x database"* ]]; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup failed: empty or invalid SQLite file" >&2
+    elif mv -- "$download_file" "$backup_file"; then
         local file_size=$(ls -lh "$backup_file" | awk '{print $5}')
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup successful: $backup_file ($file_size)"
         
@@ -76,11 +96,9 @@ backup_database() {
         fi
         
         return 0
-    else
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup failed with HTTP status: $http_code"
-        rm -f "$backup_file"
-        return 1
     fi
+    rm -f -- "$download_file"
+    return 1
 }
 
 echo "Temp Master Dashboard Database Backup"

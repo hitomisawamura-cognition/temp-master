@@ -1,5 +1,9 @@
+import base64
+import hashlib
+import re
 import time
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -268,15 +272,15 @@ class TestGetMeterHistoryEndpoint:
 
 
 class TestRefreshMetersEndpoint:
-    def test_refresh_meters_no_credentials(self, client):
+    def test_refresh_meters_no_credentials(self, client, api_key_headers):
         with patch.object(main_module, "SWITCHBOT_TOKEN", ""), \
              patch.object(main_module, "SWITCHBOT_SECRET", ""):
-            response = client.post("/api/meters/refresh")
+            response = client.post("/api/meters/refresh", headers=api_key_headers)
             
             assert response.status_code == 500
             assert "credentials not configured" in response.json()["detail"].lower()
 
-    def test_refresh_meters_success(self, client, reset_data_store):
+    def test_refresh_meters_success(self, client, reset_data_store, api_key_headers):
         with patch.object(main_module, "SWITCHBOT_TOKEN", "test-token"), \
              patch.object(main_module, "SWITCHBOT_SECRET", "test-secret"), \
              patch("app.main.collect_data", new_callable=AsyncMock) as mock_collect:
@@ -287,13 +291,66 @@ class TestRefreshMetersEndpoint:
                 device_type="Meter",
             )
             
-            response = client.post("/api/meters/refresh")
+            response = client.post("/api/meters/refresh", headers=api_key_headers)
             
             assert response.status_code == 200
             data = response.json()
             assert data["status"] == "ok"
             assert data["meters_count"] == 1
             mock_collect.assert_called_once()
+
+
+@pytest.fixture
+def api_key_headers(monkeypatch):
+    monkeypatch.setattr(main_module, "API_KEY", "test-api-key")
+    return {"X-API-Key": "test-api-key"}
+
+
+@pytest.mark.parametrize("method, path", [
+    ("GET", "/api/backup"),
+    ("POST", "/api/meters/refresh"),
+])
+@pytest.mark.parametrize("api_key, header", [
+    ("test-api-key", None),
+    ("test-api-key", "wrong-api-key"),
+    ("", None),
+    ("", "test-api-key"),
+])
+def test_protected_routes_reject_unauthorized_requests(client, monkeypatch, method, path, api_key, header):
+    monkeypatch.setattr(main_module, "API_KEY", api_key)
+    headers = {"X-API-Key": header} if header is not None else {}
+
+    response = client.request(method, path, headers=headers)
+
+    assert response.status_code == 401
+    assert response.headers["X-Frame-Options"] == "DENY"
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert "https://cdnjs.cloudflare.com" in response.headers["Content-Security-Policy"]
+
+
+def test_missing_api_key_warns_at_startup(reset_data_store, monkeypatch, caplog):
+    monkeypatch.setattr(main_module, "API_KEY", "")
+    with TestClient(app):
+        assert "API_KEY is not configured" in caplog.text
+
+
+def test_backup_database_success(client, api_key_headers):
+    response = client.get("/api/backup", headers=api_key_headers)
+
+    assert response.status_code == 200
+    assert response.content.startswith(b"SQLite format 3\x00")
+    assert response.headers["Content-Disposition"].startswith('attachment; filename="switchbot_backup_')
+    assert response.headers["Cache-Control"] == "no-store"
+
+
+def test_dashboard_inline_script_matches_content_security_policy(client):
+    template = Path(__file__).resolve().parents[2] / "switchbot-frontend" / "index.html"
+    script = re.search(rb"<script>(.*?)</script>", template.read_bytes(), re.DOTALL)[1]
+    script_hash = base64.b64encode(hashlib.sha384(script).digest()).decode()
+
+    response = client.get("/healthz")
+
+    assert f"'sha384-{script_hash}'" in response.headers["Content-Security-Policy"]
 
 
 class TestGetStatusEndpoint:
