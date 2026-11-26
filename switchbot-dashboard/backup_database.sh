@@ -17,6 +17,7 @@
 BACKEND_URL="${SWITCHBOT_BACKEND_URL:-https://temp-master.fly.dev}"
 BACKUP_DIR="${BACKUP_DIR:-$HOME/switchbot_backups}"
 BACKUP_API_KEY="${BACKUP_API_KEY:-}"
+export -n BACKUP_API_KEY
 DEFAULT_INTERVAL=3600  # 1 hour in seconds
 
 LOOP_MODE=false
@@ -46,7 +47,7 @@ while [[ $# -gt 0 ]]; do
             echo "  SWITCHBOT_BACKEND_URL  Backend URL (default: https://temp-master.fly.dev)"
             echo "  BACKUP_DIR             Backup directory (default: ~/switchbot_backups)"
             echo "  BACKUP_API_KEY         Required: backend API key (sent as X-API-Key)"
-            echo "  Requires curl and file."
+            echo "  Requires curl 7.55.0 or later and file."
             exit 0
             ;;
         *)
@@ -59,6 +60,10 @@ done
 
 if [[ -z "$BACKUP_API_KEY" ]]; then
     echo "BACKUP_API_KEY must be set" >&2
+    exit 1
+fi
+if [[ "$BACKUP_API_KEY" == *$'\r'* || "$BACKUP_API_KEY" == *$'\n'* ]]; then
+    echo "BACKUP_API_KEY must not contain line breaks" >&2
     exit 1
 fi
 if ! command -v file >/dev/null; then
@@ -76,8 +81,8 @@ backup_database() {
     
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting backup..."
     
-    if ! http_code=$(curl -sS -w "%{http_code}" -o "$download_file" \
-        -H "X-API-Key: $BACKUP_API_KEY" "$BACKEND_URL/api/backup"); then
+    if ! http_code=$(printf 'X-API-Key: %s\n' "$BACKUP_API_KEY" |
+        curl -q -sS -w "%{http_code}" -o "$download_file" -H @- "$BACKEND_URL/api/backup"); then
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup download failed" >&2
     elif [[ "$http_code" != 200 ]]; then
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup failed with HTTP status: $http_code" >&2
