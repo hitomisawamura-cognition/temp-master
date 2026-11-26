@@ -186,10 +186,7 @@
     // Global variables
     // ============================================================
 
-    // Data is served by the snakeroom backend, which actively collects readings
-    // from the same SwitchBot devices. Use the local API in development.
-    var isLocal = ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
-    var API_URL = isLocal ? window.location.protocol + '//' + window.location.hostname + ':8000' : 'https://snakeroom.fly.dev';
+    var API_URL;
 
     var REFRESH_INTERVAL = 30000;
     var currentTimeScale = 'day';
@@ -249,6 +246,27 @@
 
     function promptForApiKey() {
       return window.prompt('Enter the API key for ' + API_URL + ':');
+    }
+
+    async function resolveApiUrl() {
+      var hostname = window.location.hostname;
+      if (hostname === 'temp-master.fly.dev' || hostname === 'snakeroom.fly.dev') {
+        return 'https://snakeroom.fly.dev';
+      }
+
+      try {
+        var response = await fetch('/healthz', { redirect: 'error' });
+        if (response.ok && (await response.json()).status === 'ok') {
+          return window.location.origin;
+        }
+      } catch (_) {
+        // A standalone static server does not serve the backend health endpoint.
+      }
+
+      if (['localhost', '127.0.0.1', '[::1]'].includes(hostname)) {
+        return window.location.protocol + '//' + hostname + ':8000';
+      }
+      return 'https://snakeroom.fly.dev';
     }
 
     // Ported from src/components/Chart.tsx (lines 33-49)
@@ -645,7 +663,8 @@
     // Init
     // ============================================================
 
-    $(document).ready(function() {
+    $(document).ready(async function() {
+      API_URL = await resolveApiUrl();
       fetchData();
       setInterval(fetchData, REFRESH_INTERVAL);
 

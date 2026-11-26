@@ -35,7 +35,7 @@ CORS_ALLOWED_ORIGINS = [
     for origin in os.getenv("CORS_ALLOWED_ORIGINS", "https://temp-master.fly.dev").split(",")
     if origin.strip() and origin.strip() != "*"
 ]
-DASHBOARD_SCRIPT_HASH = "sha384-an+V4EV7Hg+fAtt6BJt5Bb2AsZWDIad/h9TjziPO0UPPvQBIKqhmVo7RZ3c9zvIt"
+DASHBOARD_SCRIPT_HASH = "sha384-rgLeUHFcf+DTUHdAvd90BiqzWcSkXA5+s0ecYzdnm/jcZVN5F9Si/CQZCuLiNAJ5"
 
 logger = logging.getLogger(__name__)
 
