@@ -102,7 +102,7 @@ backup_database() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting backup..."
     
     if ! http_code=$(printf 'X-API-Key: %s\n' "$BACKUP_API_KEY" |
-        curl -q --globoff --proto '=http,https' "${curl_proxy_options[@]}" \
+        curl --globoff --proto '=http,https' --no-location --no-location-trusted "${curl_proxy_options[@]}" \
             -sS -w "%{http_code}" -o "$download_file" -H @- "$BACKEND_URL/api/backup"); then
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup download failed" >&2
     elif [[ "$http_code" != 200 ]]; then
