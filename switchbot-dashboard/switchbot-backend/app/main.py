@@ -2,6 +2,7 @@ import asyncio
 import base64
 import hashlib
 import hmac
+import logging
 import os
 import time
 import uuid
@@ -15,7 +16,7 @@ import httpx
 from dotenv import load_dotenv
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -28,6 +29,15 @@ DB_PATH = os.getenv("DB_PATH", "/data/app.db" if os.path.exists("/data") else "a
 SWITCHBOT_API_BASE = "https://api.switch-bot.com/v1.1"
 SWITCHBOT_TOKEN = os.getenv("SWITCHBOT_TOKEN", "")
 SWITCHBOT_SECRET = os.getenv("SWITCHBOT_SECRET", "")
+API_KEY = os.getenv("API_KEY", "")
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("CORS_ALLOWED_ORIGINS", "https://temp-master.fly.dev").split(",")
+    if origin.strip() and origin.strip() != "*"
+]
+DASHBOARD_SCRIPT_HASH = "sha384-/e1Tnqvu//tNAlwZN7huLQg1PdG6HZ3mAPqP432UWlpyIP+B0KGvMb/3RQfhH9Qj"
+
+logger = logging.getLogger(__name__)
 
 DATA_COLLECTION_INTERVAL = 3600
 RATE_LIMIT_BACKOFF_BASE = 60
@@ -563,8 +573,15 @@ async def background_collector():
         await asyncio.sleep(DATA_COLLECTION_INTERVAL)
 
 
+def api_key_is_configured() -> bool:
+    return bool(API_KEY) and API_KEY != "your_api_key_here"
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if not api_key_is_configured():
+        logger.warning("API_KEY is not configured; backup and meter refresh requests will be rejected")
+
     # Initialize database and load existing data
     await init_database()
     await load_devices_from_db()
@@ -588,11 +605,39 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=CORS_ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST"],
+    allow_headers=["X-API-Key", "Content-Type", "X-Requested-With"],
+    expose_headers=["Content-Disposition"],
 )
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    script_sources = f"https://cdnjs.cloudflare.com '{DASHBOARD_SCRIPT_HASH}'"
+    style_sources = "https://cdnjs.cloudflare.com 'unsafe-inline'"
+    font_sources = "https://cdnjs.cloudflare.com"
+    if request.url.path in {app.docs_url, app.redoc_url, app.swagger_ui_oauth2_redirect_url}:
+        script_sources = "https://cdn.jsdelivr.net 'unsafe-inline'"
+        style_sources += " https://cdn.jsdelivr.net https://fonts.googleapis.com"
+        font_sources += " https://fonts.gstatic.com"
+    response.headers["Content-Security-Policy"] = (
+        f"default-src 'self'; script-src {script_sources}; style-src {style_sources}; "
+        f"font-src {font_sources}; img-src 'self' data: https://fastapi.tiangolo.com; "
+        "connect-src 'self' https://snakeroom.fly.dev; worker-src 'self' blob:; "
+        "object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+    )
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+async def require_api_key(x_api_key: Optional[str] = Header(default=None)):
+    if not api_key_is_configured() or x_api_key is None or not hmac.compare_digest(
+        x_api_key.encode("utf-8"), API_KEY.encode("utf-8")
+    ):
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
 
 
 @app.get("/healthz")
@@ -641,7 +686,7 @@ async def get_meter_history(device_id: str, time_scale: TimeScale = TimeScale.HO
     }
 
 
-@app.post("/api/meters/refresh")
+@app.post("/api/meters/refresh", dependencies=[Depends(require_api_key)])
 async def refresh_meters():
     if not SWITCHBOT_TOKEN or not SWITCHBOT_SECRET:
         raise HTTPException(status_code=500, detail="SwitchBot credentials not configured")
@@ -773,7 +818,7 @@ async def import_data(data: ImportData):
     }
 
 
-@app.get("/api/backup")
+@app.get("/api/backup", dependencies=[Depends(require_api_key)])
 async def backup_database():
     """Download the SQLite database file for backup purposes."""
     if not os.path.exists(DB_PATH):
@@ -786,6 +831,7 @@ async def backup_database():
         path=DB_PATH,
         filename=filename,
         media_type="application/x-sqlite3",
+        headers={"Cache-Control": "no-store"},
     )
 
 
