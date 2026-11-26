@@ -250,7 +250,7 @@
 
     async function resolveApiUrl() {
       var hostname = window.location.hostname;
-      if (hostname === 'temp-master.fly.dev' || hostname === 'snakeroom.fly.dev') {
+      if (!['localhost', '127.0.0.1', '[::1]'].includes(hostname)) {
         return 'https://snakeroom.fly.dev';
       }
 
@@ -263,10 +263,7 @@
         // A standalone static server does not serve the backend health endpoint.
       }
 
-      if (['localhost', '127.0.0.1', '[::1]'].includes(hostname)) {
-        return window.location.protocol + '//' + hostname + ':8000';
-      }
-      return 'https://snakeroom.fly.dev';
+      return window.location.protocol + '//' + hostname + ':8000';
     }
 
     // Ported from src/components/Chart.tsx (lines 33-49)
