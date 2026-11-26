@@ -47,6 +47,7 @@ while [[ $# -gt 0 ]]; do
             echo "  SWITCHBOT_BACKEND_URL  Backend URL (default: https://temp-master.fly.dev)"
             echo "  BACKUP_DIR             Backup directory (default: ~/switchbot_backups)"
             echo "  BACKUP_API_KEY         Required: backend API key (sent as X-API-Key)"
+            echo "  BACKUP_ALLOW_INSECURE_HTTP=1  Allow sending the key over HTTP to non-local hosts (unsafe)"
             echo "  Requires curl 7.55.0 or later and file."
             exit 0
             ;;
@@ -66,6 +67,18 @@ if [[ "$BACKUP_API_KEY" == *$'\r'* || "$BACKUP_API_KEY" == *$'\n'* ]]; then
     echo "BACKUP_API_KEY must not contain line breaks" >&2
     exit 1
 fi
+curl_proxy_options=()
+if [[ "$BACKEND_URL" == http://* ]]; then
+    if [[ "$BACKEND_URL" =~ ^http://(localhost|127\.0\.0\.1)(:[0-9]+)?(/|$) ]]; then
+        curl_proxy_options=(--noproxy '*')
+    elif [[ "${BACKUP_ALLOW_INSECURE_HTTP:-}" != 1 ]]; then
+        echo "Refusing to send the API key over non-local HTTP. Use HTTPS or explicitly set BACKUP_ALLOW_INSECURE_HTTP=1." >&2
+        exit 1
+    fi
+elif [[ "$BACKEND_URL" != https://* ]]; then
+    echo "SWITCHBOT_BACKEND_URL must start with https:// or http://" >&2
+    exit 1
+fi
 if ! command -v file >/dev/null; then
     echo "The file command is required to validate SQLite backups" >&2
     exit 1
@@ -82,7 +95,8 @@ backup_database() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting backup..."
     
     if ! http_code=$(printf 'X-API-Key: %s\n' "$BACKUP_API_KEY" |
-        curl -q -sS -w "%{http_code}" -o "$download_file" -H @- "$BACKEND_URL/api/backup"); then
+        curl -q --globoff --proto '=http,https' "${curl_proxy_options[@]}" \
+            -sS -w "%{http_code}" -o "$download_file" -H @- "$BACKEND_URL/api/backup"); then
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup download failed" >&2
     elif [[ "$http_code" != 200 ]]; then
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup failed with HTTP status: $http_code" >&2
