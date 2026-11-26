@@ -49,6 +49,7 @@ while [[ $# -gt 0 ]]; do
             echo "  BACKUP_API_KEY         Required: backend API key (sent as X-API-Key)"
             echo "  BACKUP_ALLOW_INSECURE_HTTP=1  Allow sending the key over HTTP to non-local hosts (unsafe)"
             echo "  Requires curl 7.55.0 or later and file."
+            echo "  Runs SQLite quick_check when sqlite3 is installed."
             exit 0
             ;;
         *)
@@ -85,6 +86,12 @@ if ! command -v file >/dev/null; then
 fi
 mkdir -p "$BACKUP_DIR" || exit 1
 
+sqlite_backup_is_valid() {
+    local result
+    result=$(sqlite3 -batch -bail -readonly -init /dev/null "$1" 'PRAGMA quick_check;') &&
+        [[ "$result" == ok ]]
+}
+
 backup_database() {
     local timestamp
     timestamp=$(date +%Y%m%d_%H%M%S)
@@ -102,6 +109,8 @@ backup_database() {
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup failed with HTTP status: $http_code" >&2
     elif [[ ! -s "$download_file" || "$(LC_ALL=C file -b "$download_file")" != "SQLite 3.x database"* ]]; then
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup failed: empty or invalid SQLite file" >&2
+    elif command -v sqlite3 >/dev/null && ! sqlite_backup_is_valid "$download_file"; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup failed: SQLite quick_check did not return ok" >&2
     elif mv -- "$download_file" "$backup_file"; then
         local file_size=$(ls -lh "$backup_file" | awk '{print $5}')
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup successful: $backup_file ($file_size)"
