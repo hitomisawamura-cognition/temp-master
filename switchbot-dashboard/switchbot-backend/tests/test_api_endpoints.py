@@ -315,6 +315,8 @@ def api_key_headers(monkeypatch):
     ("test-api-key", "wrong-api-key"),
     ("", None),
     ("", "test-api-key"),
+    ("your_api_key_here", None),
+    ("your_api_key_here", "your_api_key_here"),
 ])
 def test_protected_routes_reject_unauthorized_requests(client, monkeypatch, method, path, api_key, header):
     monkeypatch.setattr(main_module, "API_KEY", api_key)
@@ -328,8 +330,9 @@ def test_protected_routes_reject_unauthorized_requests(client, monkeypatch, meth
     assert "https://cdnjs.cloudflare.com" in response.headers["Content-Security-Policy"]
 
 
-def test_missing_api_key_warns_at_startup(reset_data_store, monkeypatch, caplog):
-    monkeypatch.setattr(main_module, "API_KEY", "")
+@pytest.mark.parametrize("api_key", ["", "your_api_key_here"])
+def test_missing_api_key_warns_at_startup(reset_data_store, monkeypatch, caplog, api_key):
+    monkeypatch.setattr(main_module, "API_KEY", api_key)
     with TestClient(app):
         assert "API_KEY is not configured" in caplog.text
 

@@ -573,9 +573,13 @@ async def background_collector():
         await asyncio.sleep(DATA_COLLECTION_INTERVAL)
 
 
+def api_key_is_configured() -> bool:
+    return bool(API_KEY) and API_KEY != "your_api_key_here"
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if not API_KEY:
+    if not api_key_is_configured():
         logger.warning("API_KEY is not configured; backup and meter refresh requests will be rejected")
 
     # Initialize database and load existing data
@@ -630,7 +634,7 @@ async def add_security_headers(request: Request, call_next):
 
 
 async def require_api_key(x_api_key: Optional[str] = Header(default=None)):
-    if not API_KEY or x_api_key is None or not hmac.compare_digest(
+    if not api_key_is_configured() or x_api_key is None or not hmac.compare_digest(
         x_api_key.encode("utf-8"), API_KEY.encode("utf-8")
     ):
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
